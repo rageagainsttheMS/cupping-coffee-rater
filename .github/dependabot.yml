@@ -3,17 +3,24 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-    # Expo SDK packages are versioned together; upgrade with `npx expo install --fix`, not Dependabot.
+      interval: monthly
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+    # Expo SDK packages are versioned together; upgrade them with `npx expo install --fix`.
     ignore:
       - dependency-name: "expo*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "@expo/*"
       - dependency-name: "react"
       - dependency-name: "react-dom"
       - dependency-name: "react-native*"
-      - dependency-name: "@expo/*"
+      - dependency-name: "jest"
       - dependency-name: "jest-expo"
+      - dependency-name: "@types/jest"
+      - dependency-name: "@types/react"
+      - dependency-name: "eslint*"
+      - dependency-name: "typescript"
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
