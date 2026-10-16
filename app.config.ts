@@ -43,6 +43,10 @@ const config: ExpoConfig = {
     "expo-image",
     "expo-secure-store",
   ],
+  owner: "williamwrigleys-team",
+  extra: {
+    eas: { projectId: "01bbdff4-b2da-4d90-b81e-fcbc7136527a" },
+  },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
