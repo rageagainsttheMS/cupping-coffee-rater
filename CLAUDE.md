@@ -6,3 +6,5 @@
 - When changes are ready, stop and say so. Propose a commit message and wait for the user to approve or edit it. The user wants to write or edit every commit message themselves.
 - Leave changes uncommitted in the working tree by default. Staging with `git add` is also left to the user unless they ask.
 - Read-only git commands (`status`, `diff`, `log`) are fine.
+
+Note that all markdown files (with exception of this file), are listed in the /markdown folder in this repo. Always stop and read AGENTS.md before beginning a coding task. 
