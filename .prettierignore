@@ -1,0 +1,7 @@
+node_modules
+.expo
+dist
+npm-lock.json
+*.docx
+supabase/.temp
+src/lib/database.types.ts
