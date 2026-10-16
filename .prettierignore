@@ -5,3 +5,4 @@ npm-lock.json
 *.docx
 supabase/.temp
 src/lib/database.types.ts
+*.md
