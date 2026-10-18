@@ -11,11 +11,18 @@ export const DETAILS_FIELD_MASK =
   "id,displayName,location,regularOpeningHours,currentOpeningHours,rating,userRatingCount,googleMapsUri";
 
 const TEXT_SEARCH_BIAS_RADIUS_M = 5000;
+/** Google normally answers in well under a second. Past this, give up with a generic error. */
+const REQUEST_TIMEOUT_MS = 8000;
 
 type FetchResponse = { ok: boolean; status: number; json(): Promise<unknown> };
 export type FetchLike = (
   url: string,
-  init: { method: string; headers: Record<string, string>; body?: string },
+  init: {
+    method: string;
+    headers: Record<string, string>;
+    body?: string;
+    signal?: AbortSignal;
+  },
 ) => Promise<FetchResponse>;
 
 const placeSchema = z.object({
@@ -97,6 +104,7 @@ export function createPlacesClient({
           "X-Goog-FieldMask": fieldMask,
         },
         body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
     } catch {
       throw new PlacesError();

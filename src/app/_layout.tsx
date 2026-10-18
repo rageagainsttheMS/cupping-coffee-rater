@@ -14,11 +14,15 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AuthProvider } from "@/features/auth/AuthProvider";
+import { AuthLinkHandler } from "@/features/auth/AuthLinkHandler";
+import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
+import { OnboardingProvider } from "@/features/auth/OnboardingProvider";
+import { ProfileError } from "@/features/auth/ProfileError";
+import { useStage } from "@/features/auth/useStage";
 import { queryClient, subscribeQueryManagers } from "@/lib/query";
 import { ThemeProvider, useTheme } from "@/lib/theme/ThemeProvider";
 
-// Hold the splash screen until the fonts are ready.
+// Hold the splash screen until the fonts and the saved session are ready.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -31,10 +35,6 @@ export default function RootLayout() {
     Manrope_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hide();
-  }, [fontsLoaded, fontError]);
-
   useEffect(() => subscribeQueryManagers(), []);
 
   // On a font error the app still opens, using the system font.
@@ -45,11 +45,14 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <BottomSheetModalProvider>
-                <ThemedStack />
-              </BottomSheetModalProvider>
-            </AuthProvider>
+            <OnboardingProvider>
+              <AuthProvider>
+                <AuthLinkHandler />
+                <BottomSheetModalProvider>
+                  <AppShell />
+                </BottomSheetModalProvider>
+              </AuthProvider>
+            </OnboardingProvider>
           </QueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
@@ -57,15 +60,40 @@ export default function RootLayout() {
   );
 }
 
-function ThemedStack() {
+/**
+ * Chooses which screens exist for the person's current stage (see `resolveStage`). A screen outside
+ * the current stage is protected, so Expo Router redirects away from it.
+ */
+function AppShell() {
+  const stage = useStage();
+  const { profileError } = useAuth();
   const { colors, scheme } = useTheme();
+
+  useEffect(() => {
+    if (stage !== "loading" || profileError) SplashScreen.hide();
+  }, [stage, profileError]);
+
+  if (profileError) return <ProfileError />;
+  if (stage === "loading") return null;
+
   return (
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
       >
-        <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Protected guard={stage === "welcome" || stage === "terms" || stage === "location"}>
+          <Stack.Screen name="(onboarding)" />
+        </Stack.Protected>
+        <Stack.Protected guard={stage === "welcome" || stage === "auth" || stage === "reset"}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={stage === "app"}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="cafe/[id]" />
+          <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
+        </Stack.Protected>
+        <Stack.Screen name="index" />
       </Stack>
     </>
   );

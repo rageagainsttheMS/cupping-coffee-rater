@@ -11,6 +11,7 @@ const config: ExpoConfig = {
   ios: {
     icon: "./assets/expo.icon",
     bundleIdentifier: "com.williamw.cupping",
+    usesAppleSignIn: true,
     config: { googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY },
   },
   android: {
@@ -38,10 +39,27 @@ const config: ExpoConfig = {
         imageWidth: 76,
       },
     ],
-    "expo-location",
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "Coffee Rater uses your location to show cafes near you and to mark your reviews as verified visits.",
+      },
+    ],
     "expo-image-picker",
     "expo-image",
     "expo-secure-store",
+    "expo-apple-authentication",
+    // Google sign-in. The plugin only adds the iOS URL scheme (Android needs nothing from it) and
+    // throws without one, so it is included once GOOGLE_IOS_URL_SCHEME is set for iOS builds.
+    ...(process.env.GOOGLE_IOS_URL_SCHEME
+      ? [
+          [
+            "@react-native-google-signin/google-signin",
+            { iosUrlScheme: process.env.GOOGLE_IOS_URL_SCHEME },
+          ] as [string, { iosUrlScheme: string }],
+        ]
+      : []),
   ],
   owner: "williamwrigleys-team",
   extra: {

@@ -96,3 +96,29 @@ Fixed by computing the weights in double precision and reading scores once. Afte
 ### Search cost control
 
 **Decided:** Google is skipped when 10 or more stored cafes are already in the area, or when the same 0.01° tile or text query was searched in the last 25 days. Text searches are not blocked by stored cafes. There is no per-user daily cap yet. The Google Cloud quotas from GETTING_STARTED §5 are the backstop. Revisit if the Places bill grows.
+
+## Sign-in
+
+### Email link flow
+
+**Decided: PKCE.** The Supabase client uses `flowType: "pkce"`, so confirmation and password reset links carry a one-time `code` that the app exchanges for a session. Links must be opened on the phone that asked for them. Redirect targets are `coffeerater://auth-callback` and `coffeerater://reset-password`.
+
+### Terms agreement
+
+**Decided: recorded at sign-up through user metadata**, not by a second request. The sign-up form sends `accepted_terms: true`, and the profile trigger sets `accepted_terms_at`. Social sign-ins skip the form, so they see a one-time "agree to the terms" screen.
+
+### Legal links
+
+**Open until M9.5.** The Terms of Use and Privacy Policy links on the sign-up and terms screens do nothing yet. `LEGAL_URLS` in `src/lib/links.ts` is empty until the pages are hosted.
+
+### Location step: no suburb list
+
+**Decided 18 Oct 2026: dropped the "Enter a suburb instead" fallback.** The location step offers **Allow location** and **Not now**. Not now continues into the app, and the map opens on Melbourne CBD (`DEFAULT_MAP_CENTRE`). People without location get no verified-visit badge and no nearest-cafe suggestion, and can still browse and search. Chosen over a screen that only allows "Allow location", which can leave someone stuck and is a risk with Apple's review rules on forcing location. The Product Design doc's onboarding list was updated; its Location screen image still shows the old design.
+
+### Sign in with Apple
+
+**Decided: the official Apple button, and a separate iOS-only module.** The button is `AppleAuthenticationButton` ("Continue with Apple"), not our own styled button, so it meets Apple's design rules. The code lives in `appleAuth.ios.tsx`, with a no-op `appleAuth.tsx` for Android and web, so those platforms never load the iOS-only packages. The person's name is saved to the profile on the first sign-in, since Apple sends it only then.
+
+### Google sign-in
+
+**Decided: the native Google sign-in library with Supabase `signInWithIdToken`, off until configured.** `@react-native-google-signin/google-signin` shows the Google account sheet and returns an ID token, which Supabase verifies. The button appears only when `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is set, and the library loads only when tapped, so builds without the native module still start. The library's config plugin is added only when `GOOGLE_IOS_URL_SCHEME` is set, because it only affects iOS and throws without a scheme. The button uses a generic Google icon rather than Google's official artwork, which should be checked against their branding guidelines before launch.

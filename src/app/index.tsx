@@ -1,6 +1,9 @@
 import { Redirect } from "expo-router";
+import { useStage } from "@/features/auth/useStage";
+import { stageHref } from "@/features/auth/stageHref";
 
-// Auth and onboarding redirects arrive in M4. Until then the app opens on the map.
+/** The entry point: sends each person to the screen their stage starts on. */
 export default function Index() {
-  return <Redirect href="/map" />;
+  const href = stageHref(useStage());
+  return href ? <Redirect href={href} /> : null;
 }

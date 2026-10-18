@@ -185,6 +185,24 @@ describe("getDetails", () => {
   });
 });
 
+describe("timeout", () => {
+  it("gives every Google request a time limit so a hung request cannot hang the function", async () => {
+    const { client, fetchMock } = setup(reply(200, { places: [] }));
+    await client.searchNearby({ lat: -37.8, lng: 144.97, radiusM: 1000 });
+    await client.getDetails("ChIJabc");
+    for (const call of fetchMock.mock.calls as unknown as [string, any][]) {
+      expect(call[1].signal).toBeInstanceOf(AbortSignal);
+    }
+  });
+
+  it("turns a timeout into a PlacesError", async () => {
+    const timeout = new DOMException("The operation timed out", "TimeoutError");
+    const { client } = setup(timeout as unknown as Error);
+    const failure = await client.searchText({ query: "market lane" }).catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(PlacesError);
+  });
+});
+
 describe("errors", () => {
   it("turns an error response into a generic PlacesError with no Google detail", async () => {
     const { client } = setup(

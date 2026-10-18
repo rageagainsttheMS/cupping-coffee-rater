@@ -10,7 +10,12 @@ import type { Metric } from "@/domain/metrics";
  */
 export const copy = {
   common: {
+    appName: "Cupping - Coffee Rater",
     close: "Close",
+    back: "Back",
+    skip: "Skip",
+    next: "Next",
+    loading: "Loading",
   },
 
   tabs: {
@@ -24,8 +29,6 @@ export const copy = {
     map: "Near you",
     saved: "Saved",
     profile: "Profile",
-    welcome: "Welcome",
-    signIn: "Sign in",
     review: "Rate a cafe",
     cafe: (id: string) => `Cafe ${id}`,
   },
@@ -66,6 +69,147 @@ export const copy = {
     almond: "Almond",
     lactose_free: "Lactose free",
   } satisfies Record<Milk, string>,
+
+  onboarding: {
+    welcome: {
+      title: "Find the best cafes, rated by other coffee addicts",
+      body: "Rate coffee, food, vibe and work-friendliness at cafes near you, drink by drink.",
+      getStarted: "Get started",
+      haveAccount: "I already have an account",
+      /** Example pins for the welcome picture. Not real data. */
+      samplePins: {
+        coffee: "Coffee 4.6",
+        work: "Work 4.8",
+        vibe: "Vibe 4.4",
+        food: "Food 4.1",
+      },
+    },
+    scores: {
+      title: "Four scores, not one.",
+      body: "Every cafe is rated on what matters to you.",
+      coffee: "The most important part",
+      food: "Brunch, pastries, anything you ate",
+      vibe: "Atmosphere, service and noise",
+      work: "Wifi, power and a seat to study",
+    },
+    drink: {
+      title: "Rate the drink, not just the cafe.",
+      body: "Tell us what you had and we'll show you the best flat white, long black or magic nearby.",
+      cardTitle: "What to order",
+      cardCafe: "Corner Roast",
+      footnote: "Add the price and beans if you like, so the next person knows what to expect.",
+      createAccount: "Create your account",
+    },
+    /** A made-up cafe, to show what the cafe page will look like. */
+    sampleDrinks: [
+      { name: "Magic", detail: "14 people · about $5.80", score: "4.8" },
+      { name: "Flat white", detail: "19 people · about $5.50", score: "4.6" },
+      { name: "Long black", detail: "8 people · about $4.80", score: "4.2" },
+    ],
+    pageDots: (page: number, total: number) => `Page ${page} of ${total}`,
+  },
+
+  location: {
+    title: "Find cafes near you.",
+    body: "Allow location to see ratings around you and to mark your reviews as verified visits.",
+    allow: "Allow location",
+    notNow: "Not now",
+    changeLater: "You can change this any time in settings.",
+  },
+
+  auth: {
+    signIn: {
+      title: "Welcome back to Cupping - Coffee Rater",
+      subtitle: "Sign in to find the best cup, rate what you drink and save your favourites.",
+      google: "Continue with Google",
+      apple: "Continue with Apple",
+      orEmail: "or with email",
+      email: "Email",
+      emailPlaceholder: "you@example.com",
+      password: "Password",
+      passwordPlaceholder: "Your password",
+      forgot: "Forgot password?",
+      submit: "Sign in",
+      newHere: "New here?",
+      createLink: "Create an account",
+    },
+    signUp: {
+      title: "Join the cafe regulars",
+      subtitle: "Rate the drinks you have and help people find the best cafes",
+      google: "Google",
+      apple: "Apple",
+      orEmail: "or with email",
+      displayName: "Display name",
+      displayNamePlaceholder: "Shown on your reviews",
+      email: "Email",
+      emailPlaceholder: "you@example.com",
+      password: "Password",
+      passwordPlaceholder: "At least 8 characters",
+      agreePrefix: "I agree to the ",
+      terms: "Terms of Use",
+      and: " and ",
+      privacy: "Privacy Policy",
+      submit: "Create account",
+      haveAccount: "Already have an account?",
+      signInLink: "Sign in",
+      checkEmailTitle: "Check your email",
+      checkEmailBody: (email: string) =>
+        `We sent a link to ${email}. Open it on this phone to finish creating your account.`,
+      backToSignIn: "Back to sign in",
+    },
+    forgot: {
+      title: "Reset your password",
+      body: "Enter your email and we'll send you a link to choose a new password.",
+      submit: "Send link",
+      sentTitle: "Check your email",
+      sentBody: (email: string) =>
+        `If there's an account for ${email}, a reset link is on its way. Open it on this phone.`,
+      backToSignIn: "Back to sign in",
+    },
+    reset: {
+      title: "Choose a new password",
+      password: "New password",
+      passwordPlaceholder: "At least 8 characters",
+      confirm: "Confirm password",
+      confirmPlaceholder: "Type it again",
+      submit: "Save password",
+    },
+    terms: {
+      title: "One more thing",
+      body: "Please agree to our terms and privacy policy to keep going.",
+      submit: "Continue",
+      signOut: "Not now, sign out",
+    },
+    profileError: {
+      title: "We couldn't load your account",
+      body: "Check your connection and try again.",
+      retry: "Try again",
+      signOut: "Sign out",
+    },
+    checkbox: {
+      checked: "Checked",
+      unchecked: "Not checked",
+    },
+    errors: {
+      emailInvalid: "Enter a valid email address.",
+      passwordTooShort: "Use at least 8 characters.",
+      passwordRequired: "Enter your password.",
+      passwordsDifferent: "The passwords don't match.",
+      nameRequired: "Enter a name to show on your reviews.",
+      nameTooLong: "Keep your name to 40 characters.",
+      termsRequired: "Agree to the terms to continue.",
+      invalidCredentials: "That email and password don't match.",
+      emailTaken: "There's already an account with that email. Try signing in.",
+      emailNotConfirmed: "Confirm your email first. Check your inbox for the link.",
+      weakPassword: "That password is too easy to guess. Try a longer one.",
+      rateLimited: "Too many tries. Wait a few minutes and try again.",
+      network: "Can't reach the server. Check your connection and try again.",
+      playServices:
+        "Google sign-in needs Google Play services, which this phone doesn't have or needs to update.",
+      linkInvalid: "That link has expired or was already used. Request a new one.",
+      generic: "Something went wrong. Please try again.",
+    },
+  },
 
   a11y: {
     rateCafe: "Rate a cafe",

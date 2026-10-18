@@ -314,6 +314,21 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 
 Order from the product doc: pitch first, sign-up second, location last. No guest mode.
 
+> **Status.** (The location step has no suburb list: see 4.6.) 4.1 to 4.6 are built and checked in code (lint, types, 159 Jest tests, 145
+> pgTAP tests, a full bundle, and the sign-up, sign-in and reset-email flow against the local auth
+> server). **Not yet seen on a phone.** 4.4 (Google) and 4.5 (Apple) are code only and have never been run: 4.4
+> needs OAuth clients created in Google Cloud (see its setup steps), and 4.5 needs an iPhone and the Apple Developer account.
+>
+> How it works: `resolveStage()` turns the saved flags, the session and the profile into one stage
+> (`loading`, `welcome`, `auth`, `reset`, `terms`, `location`, `app`). The root layout uses Expo Router
+> `Stack.Protected` guards so only the screens for the current stage exist, and a change of stage
+> redirects automatically. Email links use PKCE (`flowType: "pkce"`): the app exchanges the `code` in
+> `coffeerater://reset-password` and `coffeerater://auth-callback` for a session. Sign-up sends the
+> display name and the terms agreement as user metadata, and the `signup_profile` migration turns that
+> into the profile (also taking a social user's name from Google's `full_name`), so the agreement is
+> recorded even when email confirmation is on. Local Supabase has `coffeerater://*` as an allowed
+> redirect and an 8-character minimum password; the hosted project needs the same (M11).
+
 ### 4.1 Auth state and routing
 
 - `src/features/auth/AuthProvider.tsx`: subscribes to `onAuthStateChange`, exposes `session`, `profile`, `signOut`.
@@ -332,7 +347,7 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
 
 - **Create account:** display name, email, password (≥ 8), and a required "I agree to the Terms of Use and Privacy Policy" checkbox (links from M9). `signUp` with `display_name` in user metadata; store `accepted_terms_at`.
 - **Sign in:** email + password, "Forgot password?" → `resetPasswordForEmail` with a deep link (`coffeerater://reset-password`) → a set-new-password screen.
-- Turn on email confirmation in the hosted project and handle the confirm deep link.
+- Turn on email confirmation in the hosted project and handle the confirm deep link. (Deep links are handled; the hosted setting is part of M11.1. Local confirmation stays off for quicker testing.)
 - Validate with React Hook Form + Zod; show Supabase errors in plain language.
 
 ### 4.4 Google sign-in 🔧
@@ -341,20 +356,35 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
 - Google Cloud: create OAuth clients (Web, Android with debug **and** EAS SHA-1s, iOS). Add the Web client ID and secret to Supabase Auth → Google.
 - Sign in natively, then `supabase.auth.signInWithIdToken({ provider: 'google', token })`.
 - First-time social users get a profile from their Google name; show the terms checkbox once if `accepted_terms_at` is null.
+- **Status: code path built, never run** (the Google Cloud clients do not exist yet). Typecheck, lint, 164 Jest tests and a bundle with a fake client ID pass. What exists: `googleAuth.ts` (sign in, error text, sign out of Google), `GoogleContinueButton.tsx` (the white outlined button from the designs), `googleHelpers.ts` (tested) and `SocialSignIn.tsx` (shows Google and Apple buttons where each can work). The **button stays hidden until `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is set**, and the native library is loaded only when someone taps it, so a build made before the library was added cannot crash on launch. The sign-in module needs a **new dev build** (native code).
+- **Setup only you can do:**
+  1. **Google Cloud** (project `coffee-rater`) → Google Auth Platform. *Branding*: app name and a support email. *Audience*: External. While the app is in Testing, **only listed test users can sign in**, so add your own Google account(s) (and beta testers) as test users, or publish the app when ready (the basic `openid`, email and profile scopes need no verification).
+  2. **Clients** (create three):
+     - **Web application.** Add the Supabase callback URL as an authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`. Note the client ID and secret.
+     - **Android.** Package name `com.williamw.cupping`, and the **SHA-1 of the EAS keystore** (expo.dev → project → Credentials → Android → the build credentials page, or `eas credentials`). Also add the local debug keystore SHA-1 if you build with `expo run:android` (the `keytool` command in GETTING_STARTED §5), and later the Play App Signing SHA-1 (M12.4). A wrong SHA-1 shows as "developer error" on the phone.
+     - **iOS.** Bundle ID `com.williamw.cupping`. Note the client ID and its reversed form, the iOS URL scheme (`com.googleusercontent.apps.…`).
+  3. **Supabase dashboard** (hosted, M11) → Authentication → Providers → Google: enable; **Client IDs** = the web client ID first, then the Android and iOS client IDs, comma-separated; secret = the web client secret. Leave "Skip nonce check" off unless sign-in fails with a nonce error (iOS is the likely case).
+  4. **Local testing** against local Supabase (the app currently points at it): add `[auth.external.google]` to `supabase/config.toml` with `enabled = true`, `client_id` = the web client ID, `secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"` and `skip_nonce_check = true`, put the secret in `supabase/.env` (git-ignored), then restart with `supabase stop` and `supabase start`.
+  5. **App settings:** in `.env.local` set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` for iOS). For iOS builds also set `GOOGLE_IOS_URL_SCHEME`. For EAS builds add the same as EAS environment variables (`eas env:create`) for each environment. They are not secrets.
+  **Progress (18 Oct 2026):** the Android and Web clients exist. Locally, the web client ID is in `.env.local`, the Google provider is enabled in `supabase/config.toml` (web and Android client IDs; the secret is in the git-ignored `supabase/.env`), and the local auth server reaches its token check (a fake token returns "Bad ID token"). Not done: the iOS client, the same settings in the hosted Supabase project (M11) and in EAS environment variables for preview and production builds, and the new development build with a real sign-in test.
+  6. Make a new development build, then test: sign in with Google, the profile name comes from the Google account, the terms screen appears once, and signing out then in again offers the account chooser.
 
 ### 4.5 Sign in with Apple 🔧
 
 - Required on iOS because Google sign-in is offered. Install `expo-apple-authentication`, set `ios.usesAppleSignIn: true`.
 - Show the Apple button only on iOS (`AppleAuthentication.isAvailableAsync()`). Sign in with `signInWithIdToken({ provider: 'apple', token, nonce })`.
 - Needs the Apple Developer account for the Services ID and key. If it isn't bought yet, build the code path now and configure the provider in M12.
+- **Status: code path built, never run** (no iPhone or Apple Developer account yet). Typecheck, lint and an iOS bundle pass, and the Android bundle contains none of the Apple code. What exists: `src/features/auth/appleAuth.ios.tsx` (official "Continue with Apple" button, a hashed nonce to Apple and the raw nonce to Supabase, then `signInWithIdToken`), `appleAuth.tsx` (the Android and web version, which shows nothing), `SocialSignIn.tsx` (the button plus the "or with email" divider on the sign-in and create-account screens) and `appleHelpers.ts` (tested). Apple sends the person's name only on the first sign-in and not in the token, so it is saved to the profile's display name straight after. People who sign in with Apple see the one-time terms screen. `ios.usesAppleSignIn` and the `expo-apple-authentication` plugin are set in `app.config.ts`.
+- **Still to do before it can work (M12.4):** in the Apple Developer account, make sure the App ID `com.williamw.cupping` has the Sign in with Apple capability (EAS sets it up on the first iOS build). In the Supabase dashboard: Authentication → Providers → Apple → enable, and put `com.williamw.cupping` in **Client IDs**. A secret key is not needed for native-only sign-in. Then test on a real iPhone: first sign-in saves the name, a second sign-in works, cancelling shows no error, and revoking access then signing in again works.
+- Apple's rule that sign-in with Apple must be offered applies when Google sign-in is offered (4.4). If 4.4 is dropped, this is optional, but it is built.
 
 ### 4.6 Location step 🔧
 
 - **Allow location** → `expo-location` foreground permission. Add `NSLocationWhenInUseUsageDescription` in `app.config.ts`.
-- **Enter a suburb instead** → pick from a static list of launch suburbs with centroids in `src/domain/suburbs.ts` (CBD, Carlton, Fitzroy, plus neighbours). Save as the default map centre.
-- "You can change this any time in settings" links to Profile (M8).
+- **Not now** → continues into the app without asking. There is no suburb picker (dropped 18 Oct 2026). Whatever the answer to the system prompt, the step counts as done, so nobody is stuck on it. Without location the map opens on `DEFAULT_MAP_CENTRE` (Melbourne CBD, `src/domain/mapDefaults.ts`), and verified-visit badges and the nearest-cafe suggestion are unavailable.
+- "You can change this any time in settings" is plain text for now; the Profile setting (location permission status with a link to system settings) is built in M8.
 
-**Done when:** a new user can install, see onboarding once, create an account by email or Google, choose location or a suburb, and land on the map; signing out and in again skips onboarding.
+**Done when:** a new user can install, see onboarding once, create an account by email or Google, allow location or tap "Not now", and land on the map; signing out and in again skips onboarding.
 
 ---
 
@@ -363,7 +393,7 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
 ### 5.1 Map and data loading
 
 - `react-native-maps` with `PROVIDER_GOOGLE`, a light custom map style matching the cream theme (and a dark style), user-location dot, and a "recentre" button.
-- Initial region: the user's location, else the saved suburb.
+- Initial region: the user's location, else `DEFAULT_MAP_CENTRE` (Melbourne CBD) when they skipped or denied location.
 - On `onRegionChangeComplete` (debounced ~300 ms): query `cafes_in_view` for the region and selected metric via TanStack Query (`keepPreviousData` so pins don't flash).
 - If the result has few cafes, call `places-search` once for that area (M3 keeps the cost down).
 
@@ -459,6 +489,7 @@ Goal: under 30 seconds with the cup still on the table.
 - Pre-select the nearest cafe from `nearby_cafes` using the current location ("You're here · 20 m"); list the next few nearest.
 - "Search for a different cafe" uses the M5 search.
 - Skipped when the wizard is opened from a cafe page.
+- Without location permission nothing is pre-selected: show the search first, and explain that a verified-visit badge needs location.
 
 ### 7.3 Step 2 — Drink
 
@@ -521,7 +552,7 @@ Coffee is required to continue; "Didn't try" sends null; the comment counter blo
 
 - Header: display name (editable), avatar initial, member since, review count.
 - **My reviews:** list of the user's reviews; delete own review.
-- **Settings:** location permission status with a link to system settings, default suburb, theme (System / Light / Dark).
+- **Settings:** location permission status with a link to system settings, theme (System / Light / Dark).
 - **Safety:** Blocked users (list, unblock) — M9.
 - **About:** Terms of Use, Privacy Policy, Contact us (email link), Google attribution notice, app version.
 - **Sign out** and **Delete account** — M9.
@@ -696,6 +727,43 @@ with a photo, delete the test account.
 **Done when:** EAS reports a successful production Android build (and iOS, if the Apple account is
 active), and the smoke test passes on the phone. The app is then ready for the Play closed test
 with the seed reviewers (12+ testers for 14 days) and the first TestFlight build.
+
+---
+
+## Extra things to consider in Phase 1
+
+Not planned and **not built**. Each is a decision or a piece of work that Phase 1 depends on but no
+milestone covers yet. Decide, then add it to the milestone it fits.
+
+### Email: confirmation, password reset and delivery
+
+**What the plan already includes.** M4.3 turns on email confirmation in the hosted project, and "Forgot
+password?" sends a reset link, so the app will send email from day one. M9.5 publishes a contact email
+address. The sign-up and forgot-password screens already have text for the "Check your email" states
+(`auth.signUp.checkEmail*`, `auth.forgot.sent*`, `auth.errors.emailNotConfirmed`, `linkInvalid`).
+
+**What nothing covers: how those emails actually get sent.** To decide:
+
+- **Is email confirmation required in Phase 1?** On: fewer mistyped or fake accounts, but one more step
+  before someone can rate, and sign-up depends on email arriving. Off: simplest, and the 10-reviews-a-day
+  limit in `submit_review` is the main protection. Password reset needs working email either way. Local
+  confirmation is currently off. If it stays off in production, the "Check your email" sign-up state is unused.
+- **A sending service.** Supabase's built-in email is meant for testing, with very low rate limits, and on
+  hosted projects it may only deliver to the project team's own addresses (check the current Supabase
+  docs). The closed beta (30 to 50 seed reviewers) needs custom SMTP set in Supabase Auth, for example
+  Resend, Postmark or Amazon SES. Pick one and add its account to GETTING_STARTED §1.
+- **A sender domain.** Reliable delivery needs a domain you own, with SPF, DKIM and DMARC records, so
+  emails do not land in spam. The same domain could host the legal pages and the contact address (M9.5).
+  This ties to the app name and domain choice (M12.2: "Coffee Rater" is a placeholder).
+- **Email templates.** The defaults are generic. Edit the "Confirm signup" and "Reset password" templates
+  so the wording and name match the app, and check that the link opens the app (`coffeerater://`).
+  Links use PKCE, so they must be opened on the same phone that asked for them. Say so in the email.
+- **Limits and abuse.** Review Supabase Auth's email and per-IP rate limits, and consider a captcha if
+  sign-up spam appears.
+- **Testing.** Locally, emails land in Mailpit (`http://127.0.0.1:54324`). Before the beta, run the full
+  sign-up and reset flow on a real phone with real inboxes (Gmail and Apple Mail at least).
+- **Cost and privacy.** Custom SMTP free tiers usually cover beta volumes, but add the service to the
+  Pricing table in the SDD. Mention the emails the app sends in the Privacy Policy (M9.5).
 
 ---
 
