@@ -83,16 +83,22 @@ the answers in a `docs/decisions.md` file (one short entry per decision).
 - Load fonts with `expo-font` + `@expo-google-fonts/*`. Hold the splash screen (`expo-splash-screen`) until fonts are loaded.
 - `useTheme()` hook driven by `useColorScheme()`, with a user override saved in AsyncStorage (wired to Profile in M8).
 
-### 1.2 Domain constants and shared schemas 🧪
+### 1.2 Domain rules and shared schemas 🧪
 
-In `src/domain/` (no React imports):
+In `src/domain/` (no React imports). This folder holds **rules and types only**. It holds no
+user-facing text (see 1.5) and no lists that product decisions will change (tags, drinks).
 
-- `metrics.ts`: `Metric = 'coffee' | 'food' | 'vibe' | 'work'`, labels, icons (cup, fork and knife, sparkle, laptop), review prompts.
-- `tags.ts`: quick tags per metric from the product doc's rating-model table (Coffee: Strong, Smooth, Bitter, Too hot, Great milk; Food: Brunch, Pastries, Vegan options, Good value; Vibe: Quiet, Lively, Cozy, Bright, Friendly staff, Slow service; Work: Wifi, Power outlets, Laptop-friendly, No laptops at lunch, Big tables).
-- `drinks.ts`: drink groups and milk options (full cream, skim, oat, soy, almond, lactose-free). The authoritative drink list lives in the database (M2); this file holds only display order and groups.
-- `rating.ts` 🧪: `isValidRating(x)` (1–5 in 0.5 steps), `formatScore(score, count)` → `"4.2 (18)"` or `"New"` when `count < 3`, `scoreBand(score)`.
-- `review.schema.ts` 🧪: Zod schema for a review submission (cafe ID, one or more drinks each with a rating and optional milk and price, optional food/vibe/work ratings, tags, comment 10–280 chars, optional beans, optional photo path, optional location). This is the schema the wizard and `submit_review` payload share.
+- `metrics.ts`: `Metric = 'coffee' | 'food' | 'vibe' | 'work'` and the icon name per metric (cup, fork and knife, sparkle, laptop). The four metrics are a closed set, because the schema, scoring and palette are built around them. Labels and prompts live in the copy file.
+- `limits.ts`: every tunable number in one place: minimum ratings for a score (3), comment length (10 and 280), rating step. Each constant names the SQL check or function that must match it. The database stays authoritative.
+- `drinks.ts`: the milk enum values and the drink group order only. The drink list, groups per drink and `counts_toward_coffee` come from the `drinks` table (reference data, 1.5).
+- `rating.ts` 🧪: `isValidRating(x)` (1–5 in 0.5 steps), `formatScore(score, count)` → `"4.2 (18)"` or `"New"` when `count < 3`, `scoreBand(score)`. The word "New" comes from the copy file.
+- `review.schema.ts` 🧪: Zod schema for a review submission (cafe ID, one or more drinks each with a rating and optional milk and price, optional food/vibe/work ratings, **tag IDs**, comment 10–280 chars, optional beans, optional photo path, optional location). This is the schema the wizard and `submit_review` payload share. Tag and drink IDs are only checked as integers here. The server checks they exist and are active.
 - Jest tests for TDD rule 6 (3.5 accepted; 3.3 and 0 rejected) and the "New under 3 ratings" display rule.
+
+> **Change from the first draft:** quick tags are reference data in the database (M2.1), so a
+> product change is a data change, not an app release. `src/domain/tags.ts` stays as a temporary
+> seed list (it feeds the theme preview and becomes the offline fallback snapshot) until M2.1
+> builds the `tags` table and `referenceData.ts`, then it is replaced.
 
 ### 1.3 Providers and the Supabase client
 
@@ -107,7 +113,32 @@ In `src/domain/` (no React imports):
 - Placeholder screens for each route.
 - Shared components in `src/components/`: `MetricChip`, `ScoreTile`, `StarInput` (stub), `TagChip`, `Button`, `TextField`, `Screen` (safe area + background).
 
-**Done when:** the app opens on the phone with themed tabs and fonts in light and dark mode, and `npm test` passes the domain tests.
+### 1.5 Copy and reference data
+
+Two things the product will keep changing, kept out of the code.
+
+**All user-facing text lives in one typed file.**
+
+- `src/lib/copy/en.ts` exports one `copy` object, grouped by area (`tabs`, `metrics`, `onboarding`, `auth`, `review`, `cafe`, `saved`, `profile`, `errors`, `a11y`, `common`). Components import `copy` and never contain a string literal a user can read.
+- Text that depends on values is a function, so it stays typed and the wording stays in one place: `copy.review.coffeePrompt(drinkName)`, `copy.cafe.reviewCount(n)` (handles "1 review" and "12 reviews"), `copy.score.new`, `copy.errors.duplicateReview(cafeName)`.
+- Accessibility labels, placeholders, button labels, empty and error states, validation messages and the plain-language mapping of server errors (`rate_limit_exceeded`, `invalid_photo_path`, …) all go here too.
+- Not in this file: drink names and tag labels (database, below) and the Privacy Policy and Terms (hosted pages, M9.5).
+- Keep the keys flat enough to hand to `i18next` later if a second language is ever needed. Phase 1 is English-only (en-AU), so no i18n library yet.
+- **Lint guard:** add an ESLint `no-restricted-syntax` rule that fails on `JSXText` containing visible characters, and on string literals passed to `accessibilityLabel`, `placeholder`, `title` and `label` props, in `src/app` and `src/components`. This catches hardcoded text in CI instead of in review.
+- Move the existing hardcoded text (metric labels and prompts, tab labels, placeholder screens, `ScoreTile` spoken labels, `"New"`) into the file as part of this task.
+
+**Tags and drinks are database reference data.**
+
+- Tables `tags` and `drinks` (M2.1) hold the list, labels, order and an `active` flag. Changing a tag's wording, adding a tag or retiring one is a SQL or Studio edit, and no app release is needed.
+- **Built in M2.1, once the tables exist.** `src/lib/referenceData.ts`: a TanStack Query hook that reads `tags` and `drinks` once, caches for 24 hours (`staleTime`) and persists the result to AsyncStorage, so the wizard and cafe page work offline and the list is never blank on a cold start. A bundled snapshot of the seed lists is the last-resort fallback.
+- Reviews and counts reference tags **by ID**, never by label. Renaming a tag therefore keeps all its history and counts. Retiring a tag (`active = false`) hides it from the wizard but keeps old reviews and counts.
+- Drafts (M7.1) store tag IDs. On restore, any ID that is no longer active is dropped quietly.
+- Milk stays a Postgres enum with labels in the copy file: it changes rarely, and adding a value is a migration.
+- A rating metric (`coffee | food | vibe | work`) is not reference data. It is a product-level decision that touches the schema, scoring and palette, so it changes by migration plus a release.
+
+**Done when:** no screen or component contains user-visible text outside `src/lib/copy/en.ts` (the lint rule passes). The reference-data half (tags and drinks rendering from the database list) is finished in M2.1.
+
+**Done when (M1 as a whole):** the app opens on the phone with themed tabs and fonts in light and dark mode, and `npm test` passes the domain tests.
 
 ---
 
@@ -116,15 +147,23 @@ In `src/domain/` (no React imports):
 Every migration in this milestone starts with a failing pgTAP test. Use `npx supabase migration new
 <name>`, then `npm run db:reset && npm run db:test`.
 
+> **Tags by ID (change request, includes the reference-data hook from M1.5).** The first M2 migrations store `review_tags.tag` as label text.
+> Convert it to `tag_id` as described in 2.1, 2.2 and 2.7. If the migrations have not been pushed to
+> the hosted project (M11), amend them in place and update `seed.sql` and the pgTAP tests. If they
+> have, add a conversion migration that maps existing labels to tag IDs. Regenerate
+> `database.types.ts` either way. Then build `src/lib/referenceData.ts` (M1.5), switch the theme
+> preview and later screens to it, and delete `src/domain/tags.ts`.
+
 ### 2.1 Core tables 🧪
 
 Migration `core_tables`:
 
 - `profiles` (`id` = `auth.users.id`, `display_name`, `avatar_url`, `created_at`, `accepted_terms_at`). Trigger on `auth.users` insert creates the profile from `raw_user_meta_data.display_name`.
 - `cafes` (`id`, `google_place_id` unique, `location geography(Point,4326)`, `name`, `suburb`, `refreshed_at`, `created_at`). GiST index on `location`.
-- `drinks` (`id`, `slug`, `name`, `drink_group` enum `espresso | brewed | iced | other`, `counts_toward_coffee bool`, `sort_order`). Seed all drinks from the product doc in the migration, including chai, matcha and hot chocolate with `counts_toward_coffee = false` (stored, hidden from the Phase 1 UI).
+- `drinks` (`id`, `slug`, `name`, `drink_group` enum `espresso | brewed | iced | other`, `counts_toward_coffee bool`, `sort_order`, `active bool default true`). Seed all drinks from the product doc in the migration, including chai, matcha and hot chocolate with `counts_toward_coffee = false` (stored, hidden from the Phase 1 UI).
+- `tags` (`id smallint`, `metric`, `label`, `sort_order`, `active bool default true`; unique on `metric` + `label`). Seed the quick tags from the product doc's rating-model table. The app reads this table (M1.5), so labels can be renamed, added or retired without a release.
 
-Tests: unique place ID; the drink seed exists; chai/matcha are flagged out.
+Tests: unique place ID; the drink and tag seeds exist; chai/matcha are flagged out; a tag's label can change without touching any review.
 
 ### 2.2 Review tables and constraints 🧪
 
@@ -133,7 +172,7 @@ Migration `reviews`:
 - `reviews` (`id uuid` (client-generated allowed), `user_id`, `cafe_id`, `visit_date date default current_date`, `comment`, `beans`, `verified bool default false`, `hidden_at`, `created_at`). **Unique (`user_id`, `cafe_id`, `visit_date`)**. Comment length check 10–280.
 - `review_drinks` (`review_id`, `drink_id`, `rating`, `milk`, `price_aud numeric(5,2)`).
 - `review_ratings` (`review_id`, `metric` enum `food | vibe | work`, `rating` nullable). Null = "Didn't try".
-- `review_tags` (`review_id`, `metric`, `tag`).
+- `review_tags` (`review_id`, `tag_id` references `tags`). The metric comes from the tag. Primary key on both columns. Tags are referenced by ID, never by label text.
 - `review_photos` (`review_id`, `storage_path`, `width`, `height`). One per review in Phase 1 (unique on `review_id`).
 - Rating check on every rating column: `rating between 1 and 5 and rating * 2 = floor(rating * 2)`.
 
@@ -152,7 +191,7 @@ Migration `social_safety`:
 Migration `rls`. Enable RLS on every table, then:
 
 - `profiles`: anyone signed in can read; users update only their own row.
-- `cafes`, `drinks`: signed-in read only. Writes only via `security definer` functions / service role.
+- `cafes`, `drinks`, `tags`: signed-in read only. Writes only via `security definer` functions / service role.
 - `reviews` and child tables: signed-in users read reviews where `hidden_at is null` **and** the author isn't someone they've blocked. **No direct insert**: inserts go through `submit_review`. Users may delete their own review.
 - `saved_cafes`, `user_blocks`: users read/write only their own rows.
 - `review_reports`: users insert their own; no one reads except the service role.
@@ -172,7 +211,7 @@ Migration `scoring`. Keep the whole formula in SQL so the app never computes a s
   - `rating_count` = raw count; `score` is null when `rating_count < 3`.
 - `cafe_drink_scores` view: same formula per (cafe, drink), plus `median_price` (`percentile_cont(0.5)`) and `price_reports`.
 - `cafe_top_beans` view: most-reported beans per cafe with counts.
-- `cafe_tag_counts` view: tag counts per cafe and metric.
+- `cafe_tag_counts` view: tag counts per cafe and metric, joining `tags` so the current label is returned. Retired tags still count. Renamed tags keep their counts.
 
 Tests (TDD rules 1–5 and 9):
 
@@ -201,13 +240,13 @@ Migration `query_functions`:
 Migration `submit_review`. `security definer`, `search_path` pinned, callable by `authenticated` only.
 
 - Input: review UUID, cafe ID, drinks (JSON array), food/vibe/work ratings, tags, comment, beans, photo path, `lat`/`lng` (nullable).
-- Validates the same rules as the Zod schema (defence in depth).
+- Validates the same rules as the Zod schema (defence in depth). Tag IDs must exist and be `active`, and each tag's metric must be one the review rates (coffee, or a non-null food/vibe/work). Unknown or retired tag IDs are rejected.
 - Inserts the review and child rows in one transaction; the unique constraint enforces one per day.
 - Sets `verified = true` when `ST_DWithin(cafe.location, point, radius)` with the M0 radius.
 - Rate limit: reject when the user has posted more than N reviews (e.g. 10) in the past 24 hours.
 - Returns the before/after scores for each rated metric, so the "Posted" screen can show "4.6 · now 42 ratings" and "New → 4.8 · your rating unlocked it".
 
-Tests: TDD rule 8 (80 m → verified, 150 m → not; no location → not), rate limit, rejected invalid payloads, a photo path outside the user's own folder is rejected.
+Tests: TDD rule 8 (80 m → verified, 150 m → not; no location → not), rate limit, rejected invalid payloads (including an unknown, retired or wrong-metric tag ID), a photo path outside the user's own folder is rejected.
 
 ### 2.8 Storage 🧪
 
@@ -218,7 +257,7 @@ Migration `storage`:
 
 ### 2.9 Seed data
 
-`supabase/seed.sql`: ~40 invented cafes around Fitzroy, Carlton and the CBD (fake place IDs), 10 users, ~300 reviews spread over 18 months covering every metric, multiple drinks per visit, prices, beans, tags, a few hidden reviews and one block. Add a second, optional `supabase/seed-perf.sql` generating ~500 cafes for the M10 performance check.
+`supabase/seed.sql`: ~40 invented cafes around Fitzroy, Carlton and the CBD (fake place IDs), 10 users, ~300 reviews spread over 18 months covering every metric, multiple drinks per visit, prices, beans, tags (by `tag_id`), a few hidden reviews and one block. Add a second, optional `supabase/seed-perf.sql` generating ~500 cafes for the M10 performance check.
 
 **Done when:** `npm run db:reset && npm run db:test` passes all rules 1–9 plus RLS tests, CI's `database` job is green, and `database.types.ts` is regenerated.
 
@@ -359,7 +398,7 @@ Decided in M0: Google ratings and hours are not stored, so pins and cards never 
 1. **Header:** back button, save (heart) button, photo grid of community photos (most recent first; placeholder when none).
 2. **Name, suburb, distance, open status** ("Open till 4pm" from the live `places-details` call).
 3. **Score row:** four `ScoreTile`s (score + label, "New" under 3 ratings). Tapping a tile selects it and filters the section below to that metric.
-4. **Metric summary card** for the selected metric: "Work · 12 reviews", top tag chips with counts ("Wifi · 11", "Power outlets · 9"), and "Show all".
+4. **Metric summary card** for the selected metric: "Work · 12 reviews", top tag chips with counts ("Wifi · 11", "Power outlets · 9"), and "Show all". Tag labels come from `cafe_detail` (the current label) and all other text from the copy file.
 5. **What to order:** top drinks by score with count and median price ("Magic · 14 people · about $5.80 · 4.8"). Drinks with fewer than 3 ratings are listed without a score.
 6. **Beans:** most-reported beans with count ("reported by 6 people").
 7. **Vibe:** top vibe tags as chips with counts.
@@ -397,7 +436,7 @@ Goal: under 30 seconds with the cup still on the table.
 - One React Hook Form instance over the shared Zod schema, held in a `ReviewWizardProvider`.
 - Generate the review UUID at the start (`expo-crypto` `randomUUID()`).
 - **Draft persistence:** on every step change and on `AppState` going to background, save the form state to AsyncStorage (`review-draft:v1`). On opening the wizard with an existing draft less than 24 hours old, offer "Continue your review of Corner Roast?" / "Start again". Clear the draft after a successful post.
-- Jest tests: save/restore round-trip; stale drafts are discarded; the schema rejects a draft with no coffee rating.
+- Jest tests: save/restore round-trip; stale drafts are discarded; the schema rejects a draft with no coffee rating; tag IDs that are no longer active are dropped on restore.
 
 ### 7.2 Step 1 — Cafe
 
@@ -415,11 +454,11 @@ Goal: under 30 seconds with the cup still on the table.
 
 - Header pill: "Flat white · oat · Corner Roast". Title: "How was your flat white?"
 - `StarInput` 🧪: five large stars, half steps by tapping the left half of a star or dragging; big numeric readout ("4.5"); accessible as an adjustable control. Jest-test the touch-position → rating maths.
-- After a rating, the Coffee quick tags appear.
+- After a rating, the Coffee quick tags appear. The tag list comes from the `tags` reference data (M1.5), not from code.
 
 ### 7.5 Step 4 — Food, Vibe, Work
 
-- Each starts on "Didn't try". Tapping expands it into a `StarInput` in that metric's colour plus its quick tags. "Skip" moves on.
+- Each starts on "Didn't try". Tapping expands it into a `StarInput` in that metric's colour plus its quick tags (from `tags`). "Skip" moves on.
 
 ### 7.6 Step 5 — Comment
 
@@ -647,7 +686,7 @@ with the seed reviewers (12+ testers for 14 days) and the first TestFlight build
 ## Phase 1 completion checklist
 
 - [ ] M0 decisions recorded
-- [ ] M1 theme, navigation shell, domain rules tested
+- [ ] M1 theme, navigation shell, domain rules tested, all text in the copy file, tags and drinks from the database
 - [ ] M2 schema, RLS, scoring, `submit_review`, storage; TDD rules 1–9 green
 - [ ] M3 `places-search` and `places-details` deployed with caching and field masks
 - [ ] M4 onboarding, email/Google/Apple sign-in, location step

@@ -68,3 +68,13 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 ### Fonts
 
 **Decided:** a serif for headings and cafe names (Fraunces) and a sans for body (Manrope), both via `@expo-google-fonts`. Swap Manrope for Inter if it renders poorly on the phone.
+
+## Maintainability
+
+### Tags and drinks
+
+**Decided: database reference data, referenced by ID.** Quick tags move from `src/domain/tags.ts` to a `tags` table with an `active` flag, and `review_tags` stores `tag_id` instead of label text. Renaming a tag keeps its history and counts, and retiring one hides it from the wizard without losing old reviews. The app reads the lists through a cached query (M1.5). The four metrics stay a closed set in code and the schema.
+
+### User-facing text
+
+**Decided: one typed copy file, `src/lib/copy/en.ts`.** All screen text, accessibility labels, placeholders and error messages live there, with functions for text that takes values. An ESLint rule blocks hardcoded text in `src/app` and `src/components`. No i18n library in Phase 1 (English only); the structure allows adding one later.
