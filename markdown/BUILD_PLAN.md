@@ -278,7 +278,8 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 - Before calling Google, count stored cafes in the area. If there are enough (e.g. ≥ 10), return early. This is the main cost control.
 - Otherwise call Places API (New) Nearby Search (`includedTypes: ["cafe", "coffee_shop"]`) or Text Search for a query, with a **field mask** limited to `places.id,places.displayName,places.location,places.addressComponents`.
 - Upsert into `cafes` with the service role (place ID, name, location, suburb from address components, `refreshed_at = now()`).
-- Record each searched area in a `places_search_log` table (geohash/tile + timestamp) so the same area isn't searched again for N days.
+- Record each searched area in a `places_search_log` table so the same area isn't searched again. Built as: areas are logged per 0.01° tile (about 1.1 km), text queries per normalised query and tile, and nothing is searched again for 25 days (inside the 30-day coordinate limit).
+- Input is a bounding box (the visible map), a centre point with an optional radius, or a text query. The radius is clamped to 300–3000 m. The response is `{ status: 'enough_stored' | 'recently_searched' | 'searched', cafes }`.
 - Return new cafes as "Rate first" rows.
 
 ### 3.2 `places-details` 🧪
@@ -289,7 +290,19 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 
 ### 3.3 Tests and local run
 
-- Jest or Deno tests with mocked `fetch`: the field mask is sent; cache hit skips Google; the early-return path skips Google; errors become a generic 502; the response never contains the key.
+> **Status: built.** Deno is not installed on this machine, so the logic is plain TypeScript in
+> `supabase/functions/_shared/` with the Places client, database store and request handler injected,
+> and the tests are Jest (`supabase/functions/_shared/__tests__/`, 52 tests). The entry points
+> (`places-search/index.ts`, `places-details/index.ts`) only wire it together. Database support is
+> the `places_support` migration (`places_search_log`, `count_cafes_in_box`, `upsert_cafes`,
+> `refresh_cafe`, all service-role only) with its own pgTAP tests. The functions check the user's JWT
+> themselves (`verify_jwt = false` in `config.toml`) because the gateway check does not understand the
+> new `sb_publishable_` keys. Run end to end on the local Edge Runtime against a mock Google: auth,
+> validation, area and text search, repeat skipping, details and the cafe refresh all behaved.
+> **Still to do:** one live check with the real `GOOGLE_PLACES_KEY` (the response shapes were written from
+> Google's reference and only checked against mocks) and the phone check in "Done when".
+
+- Tests with mocked `fetch`: the field mask is sent; the early-return and recently-searched paths skip Google; errors become a generic 502; the response never contains the key. (There is no details cache, since ratings and hours are not stored.)
 - Run locally with `npx supabase functions serve --env-file supabase/.env.local` and call from the app.
 - Add `src/lib/places.ts` with typed `supabase.functions.invoke` wrappers and TanStack Query hooks.
 

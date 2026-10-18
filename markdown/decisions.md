@@ -86,3 +86,13 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 With `supabase/seed-perf.sql` loaded (540 cafes, 4,298 reviews, `ANALYZE` run), `cafes_in_view` took 456 ms for a city-block box and 1.6 s for the whole metro box, against the 200 ms target. The cost was numeric `power()` in the recency weights (about 230 ms for 10,000 ratings), made worse by the function reading the score view five times.
 
 Fixed by computing the weights in double precision and reading scores once. After the fix: about 60 ms for a city-block box and 150–190 ms for the whole metro box. **No materialised view needed at this size.** Re-measure on a phone-sized load in M10.4.
+
+## Edge Functions
+
+### Authentication
+
+**Decided: the functions verify the user's JWT themselves, and `verify_jwt` is off at the gateway.** The newer `sb_publishable_` API keys are not JWTs, so the gateway check can reject valid requests. Each function reads the `Authorization` token and checks it with `auth.getUser()`, and answers 401 otherwise. Set in `supabase/config.toml`; keep it when deploying (M11).
+
+### Search cost control
+
+**Decided:** Google is skipped when 10 or more stored cafes are already in the area, or when the same 0.01° tile or text query was searched in the last 25 days. Text searches are not blocked by stored cafes. There is no per-user daily cap yet. The Google Cloud quotas from GETTING_STARTED §5 are the backstop. Revisit if the Places bill grows.
