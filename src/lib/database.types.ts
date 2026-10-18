@@ -39,14 +39,14 @@ export type Database = {
                   ]
                 },"drinks": {
                   Row: {
-                    "counts_toward_coffee": boolean,"drink_group": Database["public"]['Enums']["drink_group"],"id": number,"name": string,"slug": string,"sort_order": number
+                    "active": boolean,"counts_toward_coffee": boolean,"drink_group": Database["public"]['Enums']["drink_group"],"id": number,"name": string,"slug": string,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "counts_toward_coffee"?: boolean,"drink_group": Database["public"]['Enums']["drink_group"],"id"?: never,"name": string,"slug": string,"sort_order": number
+                    "active"?: boolean,"counts_toward_coffee"?: boolean,"drink_group": Database["public"]['Enums']["drink_group"],"id"?: never,"name": string,"slug": string,"sort_order": number
                   }
                   Update: {
-                    "counts_toward_coffee"?: boolean,"drink_group"?: Database["public"]['Enums']["drink_group"],"id"?: never,"name"?: string,"slug"?: string,"sort_order"?: number
+                    "active"?: boolean,"counts_toward_coffee"?: boolean,"drink_group"?: Database["public"]['Enums']["drink_group"],"id"?: never,"name"?: string,"slug"?: string,"sort_order"?: number
                   }
                   Relationships: [
                     
@@ -159,14 +159,14 @@ isOneToOne: false
                   ]
                 },"review_tags": {
                   Row: {
-                    "metric": Database["public"]['Enums']["metric"],"review_id": string,"tag": string
+                    "review_id": string,"tag_id": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "metric": Database["public"]['Enums']["metric"],"review_id": string,"tag": string
+                    "review_id": string,"tag_id": number
                   }
                   Update: {
-                    "metric"?: Database["public"]['Enums']["metric"],"review_id"?: string,"tag"?: string
+                    "review_id"?: string,"tag_id"?: number
                   }
                   Relationships: [
                     {
@@ -174,6 +174,18 @@ isOneToOne: false
       columns: ["review_id"]
 isOneToOne: false
       referencedRelation: "reviews"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "review_tags_tag_id_fkey"
+      columns: ["tag_id"]
+isOneToOne: false
+      referencedRelation: "cafe_tag_counts"
+      referencedColumns: ["tag_id"]
+    },{
+      foreignKeyName: "review_tags_tag_id_fkey"
+      columns: ["tag_id"]
+isOneToOne: false
+      referencedRelation: "tags"
       referencedColumns: ["id"]
     }
                   ]
@@ -228,6 +240,20 @@ isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
+                  ]
+                },"tags": {
+                  Row: {
+                    "active": boolean,"id": number,"label": string,"metric": Database["public"]['Enums']["metric"],"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"id"?: never,"label": string,"metric": Database["public"]['Enums']["metric"],"sort_order": number
+                  }
+                  Update: {
+                    "active"?: boolean,"id"?: never,"label"?: string,"metric"?: Database["public"]['Enums']["metric"],"sort_order"?: number
+                  }
+                  Relationships: [
+                    
                   ]
                 },"user_blocks": {
                   Row: {
@@ -286,6 +312,34 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"cafe_tag_counts": {
+                  Row: {
+                    "cafe_id": string | null,"label": string | null,"metric": Database["public"]['Enums']["metric"] | null,"sort_order": number | null,"tag_count": number | null,"tag_id": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "reviews_cafe_id_fkey"
+      columns: ["cafe_id"]
+isOneToOne: false
+      referencedRelation: "cafes"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"cafe_top_beans": {
+                  Row: {
+                    "beans": string | null,"cafe_id": string | null,"report_count": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "reviews_cafe_id_fkey"
+      columns: ["cafe_id"]
+isOneToOne: false
+      referencedRelation: "cafes"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"city_averages": {
                   Row: {
                     "avg_rating": number | null,"metric": Database["public"]['Enums']["metric"] | null
@@ -305,9 +359,27 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "cafes_in_view":
+            "cafe_detail":
+{ Args: { "p_cafe_id": string }; Returns: Json
+                           },
+"cafe_reviews":
+{ Args: { "p_before_created_at"?: string,"p_before_id"?: string,"p_cafe_id": string,"p_drink_id"?: number,"p_metric"?: Database["public"]['Enums']["metric"],"p_page_size"?: number,"p_sort"?: string }; Returns: {
+              "author_name": string,"beans": string,"comment": string,"created_at": string,"drinks": Json,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"tags": Json,"user_id": string,"verified": boolean,"visit_date": string
+            }[]
+                           },
+"cafes_in_view":
 { Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number,"p_metric": Database["public"]['Enums']["metric"] }; Returns: {
               "best_drink": string,"best_drink_score": number,"coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"has_ratings": boolean,"id": string,"lat": number,"lng": number,"name": string,"rating_count": number,"score": number,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
+            }[]
+                           },
+"my_saved_cafes":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"id": string,"last_drink_name": string,"last_rating": number,"lat": number,"lng": number,"name": string,"saved_at": string,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
+            }[]
+                           },
+"nearby_cafes":
+{ Args: { "p_lat": number,"p_limit"?: number,"p_lng": number }; Returns: {
+              "distance_m": number,"google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
             }[]
                            },
 "review_rate_limit":
@@ -316,6 +388,11 @@ isOneToOne: false
 "scoring_constants":
 { Args: Record<PropertyKey, never>; Returns: {
               "half_life_days": number,"k": number,"min_count": number
+            }[]
+                           },
+"search_cafes":
+{ Args: { "p_lat"?: number,"p_lng"?: number,"p_q": string }; Returns: {
+              "distance_m": number,"google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
             }[]
                            },
 "submit_review":

@@ -78,3 +78,11 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 ### User-facing text
 
 **Decided: one typed copy file, `src/lib/copy/en.ts`.** All screen text, accessibility labels, placeholders and error messages live there, with functions for text that takes values. An ESLint rule blocks hardcoded text in `src/app` and `src/components`. No i18n library in Phase 1 (English only); the structure allows adding one later.
+
+## Performance
+
+### Map query speed (measured 2026-10-18, local Postgres)
+
+With `supabase/seed-perf.sql` loaded (540 cafes, 4,298 reviews, `ANALYZE` run), `cafes_in_view` took 456 ms for a city-block box and 1.6 s for the whole metro box, against the 200 ms target. The cost was numeric `power()` in the recency weights (about 230 ms for 10,000 ratings), made worse by the function reading the score view five times.
+
+Fixed by computing the weights in double precision and reading scores once. After the fix: about 60 ms for a city-block box and 150–190 ms for the whole metro box. **No materialised view needed at this size.** Re-measure on a phone-sized load in M10.4.

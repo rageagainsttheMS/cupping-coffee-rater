@@ -4,16 +4,19 @@ import { MetricChip } from "@/components/MetricChip";
 import { Placeholder } from "@/components/Placeholder";
 import { ScoreTile } from "@/components/ScoreTile";
 import { TagChip } from "@/components/TagChip";
-import { TAGS } from "@/domain/tags";
-import { copy } from "@/lib/copy/en";
 import { METRICS } from "@/domain/metrics";
 import type { Metric } from "@/domain/metrics";
+import { activeTagsByMetric } from "@/domain/reference";
+import { copy } from "@/lib/copy/en";
+import { useReferenceData } from "@/lib/referenceData";
 import { spacing } from "@/lib/theme/tokens";
 
 export default function MapScreen() {
   const [metric, setMetric] = useState<Metric>("coffee");
+  const { data } = useReferenceData();
+  const tags = activeTagsByMetric(data.tags);
 
-  // The chips and tiles below are a theme preview. M5 replaces this screen with the map.
+  // The chips, tiles and tags below are a theme preview. M5 replaces this screen with the map.
   return (
     <Placeholder title={copy.screens.map} milestone="M5" inTabs>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
@@ -30,8 +33,11 @@ export default function MapScreen() {
         <ScoreTile metric="work" score={null} count={2} selected={metric === "work"} />
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-        <TagChip metric="work" label={TAGS.work[0]} count={11} />
-        <TagChip metric="vibe" label={TAGS.vibe[2]} />
+        {(["work", "vibe"] as const)
+          .flatMap((m) => tags[m].slice(0, 3))
+          .map((t) => (
+            <TagChip key={t.id} metric={t.metric} label={t.label} />
+          ))}
       </View>
     </Placeholder>
   );

@@ -96,9 +96,9 @@ user-facing text (see 1.5) and no lists that product decisions will change (tags
 - Jest tests for TDD rule 6 (3.5 accepted; 3.3 and 0 rejected) and the "New under 3 ratings" display rule.
 
 > **Change from the first draft:** quick tags are reference data in the database (M2.1), so a
-> product change is a data change, not an app release. `src/domain/tags.ts` stays as a temporary
-> seed list (it feeds the theme preview and becomes the offline fallback snapshot) until M2.1
-> builds the `tags` table and `referenceData.ts`, then it is replaced.
+> product change is a data change, not an app release. `src/domain/tags.ts` is gone. Its job is
+> done by the `tags` table, `src/domain/reference.ts` (pure helpers) and `src/lib/referenceData.ts`
+> (the hook), all built in M2.
 
 ### 1.3 Providers and the Supabase client
 
@@ -130,7 +130,7 @@ Two things the product will keep changing, kept out of the code.
 **Tags and drinks are database reference data.**
 
 - Tables `tags` and `drinks` (M2.1) hold the list, labels, order and an `active` flag. Changing a tag's wording, adding a tag or retiring one is a SQL or Studio edit, and no app release is needed.
-- **Built in M2.1, once the tables exist.** `src/lib/referenceData.ts`: a TanStack Query hook that reads `tags` and `drinks` once, caches for 24 hours (`staleTime`) and persists the result to AsyncStorage, so the wizard and cafe page work offline and the list is never blank on a cold start. A bundled snapshot of the seed lists is the last-resort fallback.
+- **Built in M2.** `src/lib/referenceData.ts`: a TanStack Query hook that reads `tags` and `drinks` once, caches for 24 hours (`staleTime`) and persists the result to AsyncStorage, so the wizard and cafe page work offline and the list is never blank on a cold start. A bundled snapshot of the seed lists is the last-resort fallback.
 - Reviews and counts reference tags **by ID**, never by label. Renaming a tag therefore keeps all its history and counts. Retiring a tag (`active = false`) hides it from the wizard but keeps old reviews and counts.
 - Drafts (M7.1) store tag IDs. On restore, any ID that is no longer active is dropped quietly.
 - Milk stays a Postgres enum with labels in the copy file: it changes rarely, and adding a value is a migration.
@@ -147,12 +147,11 @@ Two things the product will keep changing, kept out of the code.
 Every migration in this milestone starts with a failing pgTAP test. Use `npx supabase migration new
 <name>`, then `npm run db:reset && npm run db:test`.
 
-> **Tags by ID (change request, includes the reference-data hook from M1.5).** The first M2 migrations store `review_tags.tag` as label text.
-> Convert it to `tag_id` as described in 2.1, 2.2 and 2.7. If the migrations have not been pushed to
-> the hosted project (M11), amend them in place and update `seed.sql` and the pgTAP tests. If they
-> have, add a conversion migration that maps existing labels to tag IDs. Regenerate
-> `database.types.ts` either way. Then build `src/lib/referenceData.ts` (M1.5), switch the theme
-> preview and later screens to it, and delete `src/domain/tags.ts`.
+> **Tags by ID: done.** The first eight migrations were already on the hosted project, so the
+> change is new migrations rather than edits: `tags_by_id` (tags table, `review_tags.tag_id`,
+> `drinks.active`, `submit_review` takes tag ids), `detail_views_and_queries` (2.5 and 2.6) and two
+> performance fixes (`cafes_in_view_single_pass`, `scoring_float_weights`). They are applied locally
+> only. Push them to the hosted project with the rest in M11.
 
 ### 2.1 Core tables 🧪
 
@@ -222,7 +221,9 @@ Tests (TDD rules 1–5 and 9):
 5. Chai and matcha ratings are stored but excluded from Coffee.
 6. Median price ignores a single outlier.
 
-Start as plain views. Only add a materialised view if M10 measurements show it's needed.
+Start as plain views. Only add a materialised view if M10 measurements show it's needed. A first
+measurement (540 cafes, 4,300 reviews) found numeric `power()` in the weights was the slow part, not the
+views themselves. Computing the weights in double precision fixed it; see decisions.md.
 
 ### 2.6 Map and cafe queries 🧪
 
@@ -230,7 +231,7 @@ Migration `query_functions`:
 
 - `cafes_in_view(min_lng, min_lat, max_lng, max_lat, metric)` → id, place ID, name, suburb, lat, lng, the chosen metric's score and count, all four scores and counts (for the swipeable card), the cafe's best drink and score ("Best here: Magic 4.8"), and `has_ratings`. Use `ST_MakeEnvelope` + `&&`. Cap at ~500 rows.
 - `cafe_detail(cafe_id)` → one JSON object: cafe fields, four metric scores, drink scores (sorted, with median prices), top beans, tag counts, whether the caller has saved it.
-- `cafe_reviews(cafe_id, metric default null, drink_id default null, sort 'recent', page_size, cursor)` → paged reviews with author display name, drinks, ratings, tags, photo path, verified flag. Respects blocks and `hidden_at`.
+- `cafe_reviews(cafe_id, metric default null, drink_id default null, sort 'recent', page_size, before_created_at, before_id)` (keyset paging: pass the `created_at` and `review_id` of the last row) → paged reviews with author display name, drinks, ratings, tags, photo path, verified flag. Respects blocks and `hidden_at`.
 - `nearby_cafes(lat, lng, limit)` → nearest cafes with distance, for wizard step 1.
 - `search_cafes(q, lat, lng)` → name/suburb `ilike` match on stored cafes, nearest first.
 - `my_saved_cafes()` → saved cafes with four scores and the caller's last drink rating there ("Your last rating: Long black 4.0").
@@ -260,6 +261,8 @@ Migration `storage`:
 `supabase/seed.sql`: ~40 invented cafes around Fitzroy, Carlton and the CBD (fake place IDs), 10 users, ~300 reviews spread over 18 months covering every metric, multiple drinks per visit, prices, beans, tags (by `tag_id`), a few hidden reviews and one block. Add a second, optional `supabase/seed-perf.sql` generating ~500 cafes for the M10 performance check.
 
 **Done when:** `npm run db:reset && npm run db:test` passes all rules 1–9 plus RLS tests, CI's `database` job is green, and `database.types.ts` is regenerated.
+
+**Status:** built and passing locally (121 pgTAP tests, `database.types.ts` regenerated). CI's `database` job is still to confirm on a PR.
 
 ---
 

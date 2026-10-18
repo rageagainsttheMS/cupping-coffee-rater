@@ -66,16 +66,16 @@ from public.reviews r
 cross join (values ('food'::public.metric), ('vibe'), ('work')) as m (metric)
 where random() < 0.6;
 
--- Quick tags.
-insert into public.review_tags (review_id, metric, tag)
-select r.id, t.metric, t.tag
+-- Quick tags, by id. Coffee tags always apply; the others only where that metric was rated.
+insert into public.review_tags (review_id, tag_id)
+select r.id, t.id
 from public.reviews r
-cross join (values
-  ('coffee'::public.metric, 'Smooth'), ('coffee', 'Strong'), ('coffee', 'Great milk'),
-  ('food', 'Pastries'), ('food', 'Brunch'),
-  ('vibe', 'Cozy'), ('vibe', 'Lively'), ('vibe', 'Friendly staff'),
-  ('work', 'Wifi'), ('work', 'Power outlets')
-) as t (metric, tag)
+join public.tags t
+  on t.metric = 'coffee'
+  or exists (
+    select 1 from public.review_ratings rr
+    where rr.review_id = r.id and rr.metric = t.metric and rr.rating is not null
+  )
 where random() < 0.12
 on conflict do nothing;
 
