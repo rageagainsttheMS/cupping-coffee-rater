@@ -60,7 +60,7 @@ the answers in a `docs/decisions.md` file (one short entry per decision).
 | Recency half-life                                | M2 scoring         | 12 months. 6 months punishes cafes too fast while ratings are sparse                                                                                                                                               |
 | Which score is displayed vs ranked               | M2, M5             | Display and rank the same Bayesian, recency-weighted score, so pins and order never disagree. Counts shown are raw counts                                                                                          |
 | Verified-visit radius                            | M2 `submit_review` | 100 m, stored as a constant so outdoor testing (M10) can change it                                                                                                                                                 |
-| Google rating fallback: field and cache duration | M3                 | `rating` and `userRatingCount` from Place Details; cache for at most the period the current Maps Platform terms allow. **Re-read the terms before M3**                                                             |
+| Google rating fallback: field and cache duration | M3                 | `rating` and `userRatingCount` from Place Details, fetched live and **not stored** (terms only allow caching lat/lng for 30 days and place IDs). Shown on the cafe page only. See decisions.md                                                             |
 | Can cafe coordinates be stored?                  | M2 `cafes` table   | SDD plan: place ID permanently, coordinates with `refreshed_at` and a refresh job (M11). Confirm against current terms                                                                                             |
 | Minimum-star filter on the map                   | M5                 | Leave out of Phase 1 (it isn't in the chosen Phase 1 screens). Low-scoring pins fade instead. Revisit after beta                                                                                                   |
 | Single or combined metric tabs                   | M5                 | Single-select in Phase 1, matching the chosen map screen. Combining tabs ("show the lower score") is Phase 2                                                                                                       |
@@ -242,8 +242,7 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 ### 3.2 `places-details` 🧪
 
 - Input: cafe ID.
-- Read from a `place_details_cache` table (`cafe_id`, `payload jsonb`, `expires_at`). If fresh, return it.
-- Otherwise call Place Details with a field mask of `regularOpeningHours,currentOpeningHours,rating,userRatingCount,googleMapsUri` (plus `location,displayName` to refresh the stored cafe row) and cache it with the M0 TTL.
+- Call Place Details live with a field mask of `regularOpeningHours,currentOpeningHours,rating,userRatingCount,googleMapsUri` (plus `location,displayName` to refresh the stored cafe row's coordinates and `refreshed_at`). Don't persist rating, count or hours; the app keeps them in its in-memory Query cache for a few minutes only.
 - Return opening hours, open-now, Google rating and count, Maps URI, and an attribution flag.
 
 ### 3.3 Tests and local run
@@ -252,7 +251,7 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 - Run locally with `npx supabase functions serve --env-file supabase/.env.local` and call from the app.
 - Add `src/lib/places.ts` with typed `supabase.functions.invoke` wrappers and TanStack Query hooks.
 
-**Done when:** from the dev build, panning to an empty area adds grey cafes from Google, and opening one shows its hours and Google rating, with each area/place costing at most one Places call per cache period.
+**Done when:** from the dev build, panning to an empty area adds grey cafes from Google, and opening one shows its hours and Google rating, with each area costing at most one Places search per search-log period and each cafe page view at most one Details call (cached in the app for a few minutes).
 
 ---
 
@@ -330,16 +329,15 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
 - Keep marker views simple and set `tracksViewChanges={false}` after first render, so hundreds of markers stay smooth.
 - Tapping a cluster zooms in; tapping a pin selects it.
 
-### 5.4 Google rating fallback on pins
+### 5.4 Google rating on pins (dropped)
 
-For grey "Rate first" cafes, the pin and card may show the Google rating greyed out, but only if
-it's already in `place_details_cache`. Don't call Places from the map. Show "Google" attribution
-next to any Google rating.
+Decided in M0: Google ratings and hours are not stored, so pins and cards never show them. Grey
+"Rate first" cafes show no Google rating. Don't call Places from the map.
 
 ### 5.5 Swipeable cafe card
 
 - `@gorhom/bottom-sheet` or a horizontal `FlatList` pager at the bottom showing cafes in view, ordered by the selected metric's score (nearest first for ties). Selecting a pin scrolls to its card; swiping a card highlights its pin.
-- Card: photo (latest community photo or placeholder), name, suburb · distance · open status (if cached), "Best here: Magic 4.8", and four `ScoreTile`s.
+- Card: photo (latest community photo or placeholder), name, suburb · distance · "Best here: Magic 4.8", and four `ScoreTile`s.
 - Tap → `cafe/[id]`.
 - This replaces CafeRadar's list button. A full list view is Phase 2.
 
@@ -359,18 +357,18 @@ next to any Google rating.
 ### 6.1 Layout (top to bottom, per the mockup)
 
 1. **Header:** back button, save (heart) button, photo grid of community photos (most recent first; placeholder when none).
-2. **Name, suburb, distance, open status** ("Open till 4pm" from cached hours).
+2. **Name, suburb, distance, open status** ("Open till 4pm" from the live `places-details` call).
 3. **Score row:** four `ScoreTile`s (score + label, "New" under 3 ratings). Tapping a tile selects it and filters the section below to that metric.
 4. **Metric summary card** for the selected metric: "Work · 12 reviews", top tag chips with counts ("Wifi · 11", "Power outlets · 9"), and "Show all".
 5. **What to order:** top drinks by score with count and median price ("Magic · 14 people · about $5.80 · 4.8"). Drinks with fewer than 3 ratings are listed without a score.
 6. **Beans:** most-reported beans with count ("reported by 6 people").
 7. **Vibe:** top vibe tags as chips with counts.
 8. **Reviews:** cards with reviewer name, drink, the selected metric's rating badge, other ratings as small icons, comment, optional photo, price and a "Verified visit" badge. Filter by metric (from the tiles) or drink; sort by recent. Infinite scroll via `useInfiniteQuery`.
-9. **Sticky footer:** "Directions" (opens Google Maps / Apple Maps via the cached `googleMapsUri` or `geo:` / `maps:` URL) and **"Rate this cafe"** (opens the wizard with this cafe pre-selected).
+9. **Sticky footer:** "Directions" (opens Google Maps / Apple Maps via the live `googleMapsUri` or `geo:` / `maps:` URL) and **"Rate this cafe"** (opens the wizard with this cafe pre-selected).
 
 ### 6.2 Google rating fallback
 
-When a metric has no community score yet, show the Google rating **greyed out** with "Google" attribution in place of "New" on the Coffee tile, until the cafe has 3 community ratings. Never mix it into community scores.
+Fetched live from `places-details` (not stored). When a metric has no community score yet, show the Google rating **greyed out** with "Google" attribution in place of "New" on the Coffee tile, until the cafe has 3 community ratings. Never mix it into community scores.
 
 ### 6.3 Photos
 
@@ -460,8 +458,8 @@ Coffee is required to continue; "Didn't try" sends null; the comment counter blo
 
 ### 8.1 Saved tab
 
-- Title "Saved", filter chips: **All · N**, **Best coffee** (Coffee ≥ 4.3), **Good for work** (Work ≥ 4.3), **Open now** (only for cafes with cached hours).
-- Rows: photo, name, suburb · distance · open status, four coloured score dots, heart to unsave (with undo snackbar). For cafes the user has reviewed, show "Your last rating: Long black 4.0".
+- Title "Saved", filter chips: **All · N**, **Best coffee** (Coffee ≥ 4.3), **Good for work** (Work ≥ 4.3).
+- Rows: photo, name, suburb · distance, four coloured score dots, heart to unsave (with undo snackbar). For cafes the user has reviewed, show "Your last rating: Long black 4.0".
 - Empty state that points to the map.
 
 ### 8.2 Profile tab
