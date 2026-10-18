@@ -211,6 +211,39 @@ export const copy = {
     },
   },
 
+  map: {
+    distanceMetres: (metres: number) => `${metres} m`,
+    distanceKm: (km: string) => `${km} km`,
+    bestHere: (drink: string, score: string) => `Best here: ${drink} ${score}`,
+    rateFirst: "Rate first",
+    newPin: "New",
+    search: "Search cafes",
+    recentre: "Show my location",
+    noCafes: "No cafes here yet",
+    noCafesBody: "Move the map or search for a cafe.",
+    findingCafes: "Looking for cafes nearby",
+    pinRated: (name: string, metricLabel: string, score: string) =>
+      `${name}, ${metricLabel} ${score}`,
+    pinNew: (name: string, metricLabel: string) => `${name}, ${metricLabel} not rated enough yet`,
+    pinRateFirst: (name: string) => `${name}, no ratings yet. Be the first to rate it`,
+    cluster: (count: number, best: string | null) =>
+      best === null ? `${count} cafes` : `${count} cafes, best score ${best}`,
+    cardLabel: (name: string) => `${name}. Open cafe page`,
+    suburbAndDistance: (suburb: string, distance: string) =>
+      distance ? `${suburb} · ${distance}` : suburb,
+  },
+
+  search: {
+    title: "Search",
+    placeholder: "Search cafes or suburbs",
+    googleRow: (query: string) => `Search Google for “${query}”`,
+    googleSearching: "Searching Google",
+    noResults: "No cafes found",
+    noResultsBody: "Try another name, or search Google to add it.",
+    error: "Couldn't search right now. Try again.",
+    hint: "Type at least 2 letters.",
+  },
+
   a11y: {
     rateCafe: "Rate a cafe",
     scoreNew: (metricLabel: string) => `${metricLabel}, new`,

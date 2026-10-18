@@ -416,8 +416,9 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
 
 ### 5.4 Google rating on pins (dropped)
 
-Decided in M0: Google ratings and hours are not stored, so pins and cards never show them. Grey
-"Rate first" cafes show no Google rating. Don't call Places from the map.
+Decided in M0: Google ratings and hours are not stored, so pins and cards never show them. Unrated
+cafes show their name on the pin and no Google rating. Don't call Places from the map. Whether to bring
+a Google rating back onto the map is a future item: see "Extra things to consider in Phase 1".
 
 ### 5.5 Swipeable cafe card
 
@@ -430,6 +431,26 @@ Decided in M0: Google ratings and hours are not stored, so pins and cards never 
 
 - Search button opens a search screen: `search_cafes` over stored cafes as you type (debounced), then a "Search Google for '…'" row that calls `places-search` with the text query.
 - Selecting a result centres the map on it and opens its card.
+
+> **Status: built, not yet seen on a phone.** Lint, types, 195 Jest tests and a bundle pass. The pure
+> logic is tested: `geo.ts` (regions, zoom, distance), `clusters.ts` (supercluster with the best score
+> carried through each cluster, pin kinds, fading), `cards.ts` (card order, distance text). The screens
+> are `(tabs)/map.tsx` and `search.tsx`, with `MapFiltersContext` shared between them. Things that only
+> a phone can confirm: the map style, how markers draw, card snapping, the recentre button, and how
+> react-native-maps behaves on this React Native version. No new dev build is needed (the map and
+> location modules were already in it).
+>
+> **How it behaves.** The map opens on your location, or on Melbourne CBD without it. Panning
+> (debounced 300 ms) loads `cafes_in_view`; the previous pins stay until the new ones arrive. If fewer
+> than 10 cafes are stored in view and the view is narrow enough, it asks `places-search` once per tile
+> per session. Cards show the cafes inside the visible area, best score first for the selected metric,
+> then nearest. A pin tap scrolls to its card and a card swipe selects its pin. Cards show no open
+> status (decided in M0). A cafe chosen in search moves the map there and shows its card.
+>
+> **To see grey "Rate first" dots from Google** the phone needs the Places function running: serve it
+> with `npx supabase functions serve --env-file supabase/.env.local` (a file holding the real
+> `GOOGLE_PLACES_KEY`), and keep Supabase running. Without it the map still works with the 40 seed
+> cafes, and the Google fill fails quietly.
 
 **Done when:** on the phone, the map opens around you, tab changes re-label pins, clusters show counts and best scores, empty areas fill with grey "Rate first" dots, and the card opens the cafe page.
 
@@ -764,6 +785,41 @@ address. The sign-up and forgot-password screens already have text for the "Chec
   sign-up and reset flow on a real phone with real inboxes (Gmail and Apple Mail at least).
 - **Cost and privacy.** Custom SMTP free tiers usually cover beta volumes, but add the service to the
   Pricing table in the SDD. Mention the emails the app sends in the Privacy Policy (M9.5).
+
+### Google rating on the map pins and cards (future, cost to assess first)
+
+Not built, and **deliberately left out for now.** Cost still has to be worked out before deciding.
+
+**What was cut and why.** The original design showed Google's rating, greyed out, on pins and cards for
+cafes with no community ratings, so the map was never blank. It was dropped in M0 because:
+
+- Google's terms let us store only place IDs, and coordinates for 30 days. Ratings, rating counts and
+  hours cannot be saved in our database, so every Google rating has to be fetched live.
+- A map can show hundreds of pins, and one live Place Details call per pin on every pan is expensive.
+  The rating and rating-count fields are billed at Google's higher "Enterprise" tier (the Technical
+  Solution Design priced details at the cheaper "Pro" tier).
+
+**What stays.** The cafe page still plans a greyed Google rating, fetched live for the one cafe being
+viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the map is affected.
+
+**To assess later:**
+
+- **Where it would show.** Options, cheapest first: only on the cafe page (today); also on the card the
+  person is looking at (one call per card viewed); on every card in the row (up to about 10 calls per
+  pan); on pins (a call per pin, probably not viable).
+- **Cost per use.** Estimate Place Details calls per session and per active user for each option, using
+  Google's current price for the exact fields requested (`rating` and `userRatingCount` only, nothing
+  else) and the free monthly allowance. Check today's Google Maps Platform pricing, as it changes, and
+  compare against the monthly budget and quotas set in GETTING_STARTED §5.
+- **Ways to cut calls.** Fetch only for cafes with fewer than 3 community ratings; only for the selected
+  card; only after the person stops panning; keep results in memory for a few minutes (allowed, but never
+  saved to the database); and a per-user daily cap, enforced in the function.
+- **Terms.** Show Google attribution beside every Google rating, never mix it into community scores, and
+  do not store it. Re-read the terms before building.
+- **Does it earn its cost?** The aim was to avoid a blank map. Now that cafes come from Google with names
+  and "Rate first" pins, check whether a rating on the map adds enough to justify the spend, for example
+  by looking at how many unrated cafes people actually open.
+- **Decision record.** Write the outcome in `decisions.md`, with the cost estimate.
 
 ---
 

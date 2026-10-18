@@ -18,6 +18,7 @@ import { AuthLinkHandler } from "@/features/auth/AuthLinkHandler";
 import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { OnboardingProvider } from "@/features/auth/OnboardingProvider";
 import { ProfileError } from "@/features/auth/ProfileError";
+import { MapFiltersProvider } from "@/features/map/MapFiltersContext";
 import { useStage } from "@/features/auth/useStage";
 import { queryClient, subscribeQueryManagers } from "@/lib/query";
 import { ThemeProvider, useTheme } from "@/lib/theme/ThemeProvider";
@@ -79,22 +80,28 @@ function AppShell() {
   return (
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
-      >
-        <Stack.Protected guard={stage === "welcome" || stage === "terms" || stage === "location"}>
-          <Stack.Screen name="(onboarding)" />
-        </Stack.Protected>
-        <Stack.Protected guard={stage === "welcome" || stage === "auth" || stage === "reset"}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-        <Stack.Protected guard={stage === "app"}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="cafe/[id]" />
-          <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
-        </Stack.Protected>
-        <Stack.Screen name="index" />
-      </Stack>
+      <MapFiltersProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        >
+          <Stack.Protected guard={stage === "welcome" || stage === "terms" || stage === "location"}>
+            <Stack.Screen name="(onboarding)" />
+          </Stack.Protected>
+          <Stack.Protected guard={stage === "welcome" || stage === "auth" || stage === "reset"}>
+            <Stack.Screen name="(auth)" />
+          </Stack.Protected>
+          <Stack.Protected guard={stage === "app"}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="search" />
+            <Stack.Screen name="cafe/[id]" />
+            <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
+          </Stack.Protected>
+          <Stack.Screen name="index" />
+        </Stack>
+      </MapFiltersProvider>
     </>
   );
 }

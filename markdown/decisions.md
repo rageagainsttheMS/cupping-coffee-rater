@@ -122,3 +122,9 @@ Fixed by computing the weights in double precision and reading scores once. Afte
 ### Google sign-in
 
 **Decided: the native Google sign-in library with Supabase `signInWithIdToken`, off until configured.** `@react-native-google-signin/google-signin` shows the Google account sheet and returns an ID token, which Supabase verifies. The button appears only when `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is set, and the library loads only when tapped, so builds without the native module still start. The library's config plugin is added only when `GOOGLE_IOS_URL_SCHEME` is set, because it only affects iOS and throws without a scheme. The button uses a generic Google icon rather than Google's official artwork, which should be checked against their branding guidelines before launch.
+
+## Map
+
+### Map pins and cards
+
+**Decided:** pins show only our own scores. Rated cafes are a circle in the selected metric's band colour (low scorers fade to 55%, never disappear), cafes with fewer than 3 ratings on that metric are a neutral "New" circle, and cafes nobody has rated are a small grey "Rate first" pill. A cluster shows its best score with the cafe count in a badge. The card row and the pins use the same data, so what is on screen and what is in the row never disagree. Google ratings and opening hours never appear on the map (see the Google data decision).
