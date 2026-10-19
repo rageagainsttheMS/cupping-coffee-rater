@@ -535,7 +535,7 @@ Goal: under 30 seconds with the cup still on the table.
 
 ### 7.3 Step 2 — Drink
 
-- Grid of drink chips: the cafe's most-rated drinks first, then the user's usual drinks, then the rest under "More…". Chai, matcha and hot chocolate are hidden in Phase 1.
+- Grid of drink chips: the popular drinks first (Latte, Flat white, Cappuccino, Long black, set in `drinkOrder.ts`), then the cafe's most-rated others, then the user's usual drinks, then the rest under "More…". Chai, matcha and hot chocolate are hidden in Phase 1.
 - Optional milk chips.
 - "+ Another drink" (after step 3) loops back here for a second drink in the same visit, so steps 2–3 repeat per drink.
 
@@ -577,6 +577,45 @@ Goal: under 30 seconds with the cup still on the table.
 ### 7.10 Component tests 🧪
 
 Coffee is required to continue; "Didn't try" sends null; the comment counter blocks under 10 characters; "+ Another drink" produces two drinks in the payload; the wizard restores a draft.
+
+> **Status: complete.** Checked on a phone. Lint, types, 299 Jest tests, 159 pgTAP tests and an
+> Android bundle pass. **A new dev build is needed:** `app.config.ts` now sets the camera and photo
+> permission strings for `expo-image-picker` (and turns off the unused microphone permission), and a
+> config plugin change only takes effect in a new native build (`npx expo run:android`).
+>
+> **Where things are.** The seven screens are the route files in `src/app/review/` (`index` is the cafe step, then `drink`, `rate`, `extras`, `comment`, `details`, `posted`), inside
+> `WizardScreen` (back, close, "Step N of 6", progress bar, Android back key). `ReviewWizardProvider`
+> holds one React Hook Form instance, the draft, and step navigation. Pure logic, all tested:
+> `draft.ts` (save, 24-hour expiry, retired tags dropped), `submission.ts` (form to the shared Zod
+> schema to `submit_review` arguments), `errors.ts`, `drinkOrder.ts`, `outcome.ts` (score movement
+> text), `price.ts`, `photo.ts` (`resizeTarget`), `steps.ts` (continue rules, back targets), and
+> `domain/starRating.ts` (touch position to rating). `StarInput` is now interactive. The map's search
+> list was pulled out into `features/map/CafeSearchPanel.tsx` so step 1 reuses it.
+>
+> **Database.** `update_review_ratings(review_id, food, vibe, work, tags)` is migration
+> `20261019100000`, with `supabase/tests/10_update_review_ratings.test.sql` (own review only, within 24
+> hours, hidden reviews refused, tags only for rated metrics). `database.types.ts` was regenerated, which
+> also picked up M3 tables it was missing.
+>
+> **How it behaves.** Opened from a cafe page, step 1 is skipped. Opened from "+ Rate", the nearest cafe
+> is pre-selected ("You're here · 20 m" within 100 m, else "Nearest · 350 m"); without location, search
+> comes first. Every step replaces the one before, so the wizard's own stack holds one screen and
+> `router.back()` closes the modal. A draft saves on every step change and when the app goes to the
+> background, and is offered for 24 hours. "Didn't try" removes that metric's tags. Posting asks for a
+> fresh position (4 second limit, never blocks), uploads the photo, calls `submit_review`, and deletes
+> the photo if the function fails. Errors are plain language: same-day duplicate, rate limit, network
+> (draft kept, retry) and photo. The Posted screen shows before and after for each rated metric
+> ("Work: New → 4.8 · your rating unlocked it") and one follow-up ("Add work details?") that saves
+> through `update_review_ratings`.
+>
+> **Differences from the plan.** The price stepper starts from the cafe's median but only records a price
+> once it is changed, so a suggestion is never posted as if the person reported it. The same drink can't
+> be added twice in one visit. After the first drink, the back button on "Extras" returns to the last
+> drink's rating, not the first.
+>
+> **Only a phone can confirm:** dragging the stars, camera and library, photo upload to Storage, the
+> verified badge at a real position, the back and close behaviour, and the draft after force-closing the
+> app. Local Supabase must be running; the migration is already applied there.
 
 **Done when:** a review with two drinks, a photo and Work tags posts from the phone in under 30 seconds, shows a verified badge when posted at a seed cafe's location, moves the scores on the map, and a review abandoned mid-way is restored after force-closing the app.
 
@@ -842,6 +881,42 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
   by looking at how many unrated cafes people actually open.
 - **Decision record.** Write the outcome in `decisions.md`, with the cost estimate.
 
+### Multiple photos per review (future)
+
+Not built. Phase 1 allows **one photo per review** (`review_photos` is keyed on `review_id`), matching
+the design doc's "one photo to start". Raised during M7 testing. Rough size: a migration plus about a
+dozen files, with no new dev build needed (the image picker already supports multiple selection).
+
+**What would change:**
+
+- **Database.** Give `review_photos` a `position` column and a new key, with a cap per review (3 is the
+  suggestion, the first photo as the cover). Existing photos become position 0. `submit_review` takes a
+  JSON list of photos instead of one path, checking every path is in the caller's own folder and the
+  list is under the cap (a signature change, so drop and recreate it and its grants). `cafe_reviews`
+  must return a photos list per review: today's join would duplicate rows and break the paging.
+  Update the pgTAP tests for submit_review, storage and the review queries, with cases for the cap and
+  another user's folder.
+- **Storage paths.** Keep files flat, for example `<user_id>/<review_id>_<n>.jpg`. Account deletion
+  (M9.4) lists objects under the user's folder, and a nested folder would not be found.
+- **Wizard.** `photo` becomes a list in the form and the draft, and drafts saved with the old single
+  `photo` must still load. The details step shows thumbnails with remove buttons and an add tile. The
+  library picker can select several at once; the camera takes one at a time. Resize each photo
+  separately. Posting uploads them all (in parallel, to protect the 30 second goal), deletes every
+  uploaded file if `submit_review` fails, and handles a partial upload failure. Retrying stays safe
+  because uploads overwrite. The review schema, submit arguments and their tests change too.
+- **Cafe page.** A review card needs a small gallery, and the full-screen viewer needs to swipe between
+  photos. The photo grid at the top already reads the photos table and mostly works unchanged.
+- **Cost.** Storage and transfer rise roughly with the number of photos, and every photo is a 1600 px
+  image with no thumbnail, so a grid of several is heavy. Do thumbnails (a small copy made at upload,
+  or Supabase image transformations if the plan allows) in the same change, and re-check Storage pricing
+  in the SDD pricing table.
+- **Moderation.** Reporting, hiding and deleting a review already cover its photos.
+- **Docs.** Update "one photo in Phase 1" in the data model above, the Technical Solution Design and the
+  Product Design Ideas document.
+
+**Decide first:** whether it earns its place yet. A single photo is enough for a beta, so wait until
+reviewers ask for more.
+
 ---
 
 ## Phase 1 completion checklist
@@ -853,7 +928,7 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
 - [ ] M4 onboarding, email/Google/Apple sign-in, location step
 - [ ] M5 map with metric tabs, clustered score pins, "Rate first" dots, swipeable card, search
 - [x] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
-- [ ] M7 six-step review wizard with drafts, photos, verified badge, posted screen
+- [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [ ] M8 Saved tab and Profile
 - [ ] M9 report, block, delete account, legal pages, moderation process
 - [ ] M10 states, Sentry, accessibility, performance and outdoor tests

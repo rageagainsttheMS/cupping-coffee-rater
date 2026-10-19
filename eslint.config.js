@@ -12,6 +12,8 @@ module.exports = defineConfig([
   {
     // Keep user-facing text out of screens and components so it can be edited in one file.
     files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    // Tests name things by their on-screen text, so literals are fine there.
+    ignores: ["**/__tests__/**"],
     rules: {
       "no-restricted-syntax": [
         "error",

@@ -51,6 +51,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"places_search_log": {
+                  Row: {
+                    "result_count": number,"search_key": string,"searched_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "result_count"?: number,"search_key": string,"searched_at"?: string
+                  }
+                  Update: {
+                    "result_count"?: number,"search_key"?: string,"searched_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"profiles": {
                   Row: {
                     "accepted_terms_at": string | null,"avatar_url": string | null,"created_at": string,"display_name": string,"id": string
@@ -372,6 +386,9 @@ isOneToOne: false
               "best_drink": string,"best_drink_score": number,"coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"has_ratings": boolean,"id": string,"lat": number,"lng": number,"name": string,"rating_count": number,"score": number,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
             }[]
                            },
+"count_cafes_in_box":
+{ Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number }; Returns: number
+                           },
 "my_saved_cafes":
 { Args: Record<PropertyKey, never>; Returns: {
               "coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"id": string,"last_drink_name": string,"last_rating": number,"lat": number,"lng": number,"name": string,"saved_at": string,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
@@ -381,6 +398,9 @@ isOneToOne: false
 { Args: { "p_lat": number,"p_limit"?: number,"p_lng": number }; Returns: {
               "distance_m": number,"google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
             }[]
+                           },
+"refresh_cafe":
+{ Args: { "p_cafe_id": string,"p_lat": number,"p_lng": number,"p_name": string }; Returns: undefined
                            },
 "review_rate_limit":
 { Args: Record<PropertyKey, never>; Returns: number
@@ -397,6 +417,14 @@ isOneToOne: false
                            },
 "submit_review":
 { Args: { "p_beans"?: string,"p_cafe_id": string,"p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_lat"?: number,"p_lng"?: number,"p_photo_height"?: number,"p_photo_path"?: string,"p_photo_width"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
+                           },
+"update_review_ratings":
+{ Args: { "p_food"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
+                           },
+"upsert_cafes":
+{ Args: { "p_cafes": Json }; Returns: {
+              "google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
+            }[]
                            },
 "verified_radius_m":
 { Args: Record<PropertyKey, never>; Returns: number

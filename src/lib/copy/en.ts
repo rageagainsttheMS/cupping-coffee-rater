@@ -46,11 +46,122 @@ export const copy = {
 
   review: {
     coffeePrompt: (drinkName: string) => `How was your ${drinkName.toLowerCase()}?`,
+    stepOf: (step: number, total: number) => `Step ${step} of ${total}`,
+    progress: (step: number, total: number) => `Review progress, step ${step} of ${total}`,
+    continue: "Continue",
+    resume: {
+      title: (cafe: string) => `Continue your review of ${cafe}?`,
+      titleNoCafe: "Continue your review?",
+      body: "You started a review in the last day.",
+      continue: "Continue",
+      startAgain: "Start again",
+    },
+    cafe: {
+      title: "Which cafe?",
+      hereNow: (distance: string) => `You're here · ${distance}`,
+      nearest: (distance: string) => `Nearest · ${distance}`,
+      nearby: "Nearby",
+      searchOther: "Search for a different cafe",
+      needsLocation:
+        "Search for the cafe you're at. Allow location to see cafes near you and to get a verified-visit badge.",
+      findingNearby: "Finding cafes near you",
+      noNearby: "No cafes found near you. Try searching.",
+      loadingCafe: "Loading the cafe",
+      loadError: "We couldn't load that cafe.",
+      selected: "Selected",
+    },
+    drink: {
+      title: "What did you have?",
+      another: (n: number) => `Drink ${n}`,
+      more: "More…",
+      fewer: "Fewer",
+      milkOptional: "Milk · Optional",
+      alreadyAdded: "Already added",
+    },
+    rate: {
+      pill: (drink: string, milk: string | null, cafe: string) =>
+        [drink, milk, cafe].filter(Boolean).join(" · "),
+      hint: "Tap or drag the stars",
+      tags: "What stood out?",
+      another: "+ Another drink",
+    },
+    extras: {
+      title: "How about the rest?",
+      body: "Rate what you tried. Skip anything you didn't.",
+      didntTry: "Didn't try",
+      tapToRate: "Tap to rate",
+      tags: "What stood out?",
+      followUpTitle: "Add more details",
+      save: "Save",
+    },
+    comment: {
+      title: "Say a few words",
+      placeholder: (drink: string, workRated: boolean) =>
+        workRated
+          ? `How was the ${drink.toLowerCase()}? Strength, milk, temperature… and how was it to work from?`
+          : `How was the ${drink.toLowerCase()}? Strength, milk, temperature…`,
+      counter: (length: number, max: number) => `${length}/${max}`,
+      tooShort: (min: number) => `Write at least ${min} characters.`,
+    },
+    details: {
+      title: "Add details",
+      body: "All optional. They help the next person.",
+      price: "Price",
+      priceOthers: (price: string) => `Others paid about ${price}`,
+      priceNotSet: "Not set",
+      priceUp: "More",
+      priceDown: "Less",
+      beans: "Beans",
+      beansPlaceholder: "Roaster or blend",
+      beansOthers: (name: string, count: number) => `Others said: ${name} · ${count}`,
+      photo: "Photo",
+      takePhoto: "Take a photo",
+      choosePhoto: "Choose from library",
+      removePhoto: "Remove photo",
+      photoPreview: "Your photo",
+      cameraDenied: "Camera access is off. You can turn it on in your phone's settings.",
+      photoFailed: "We couldn't use that photo. Try another.",
+      post: "Post review",
+      skipAndPost: "Skip and post",
+    },
+    errors: {
+      duplicateToday: (cafe: string) => `You've already rated ${cafe} today`,
+      duplicateTodayBody: "You can review it again tomorrow.",
+      rateLimit: "You've posted a lot of reviews today",
+      rateLimitBody: "Please try again tomorrow.",
+      network: "Can't reach the server",
+      networkBody: "Your review is saved. Check your connection and try again.",
+      photo: "We couldn't upload your photo",
+      photoBody: "Try again, or remove the photo and post without it.",
+      generic: "We couldn't post your review",
+      genericBody: "Your review is saved. Please try again.",
+      invalid: "Something in your review needs another look.",
+      retry: "Try again",
+      dismiss: "OK",
+    },
+    posted: {
+      title: "Thanks, your review is live",
+      verified: "Verified visit badge added",
+      unlocked: (label: string, to: string) => `${label}: New → ${to} · your rating unlocked it`,
+      moved: (label: string, from: string, to: string) => `${label}: ${from} → ${to}`,
+      unchanged: (label: string, score: string) => `${label}: ${score}`,
+      pending: (label: string, remaining: number) =>
+        `${label}: New · ${remaining} more ${remaining === 1 ? "rating" : "ratings"} to unlock`,
+      followUp: (label: string) => `Add ${label.toLowerCase()} details?`,
+      followUpBody: "It takes a few seconds and makes the scores more useful.",
+      followUpAction: "Add now",
+      saved: "Saved",
+      saveFailed: "We couldn't save that. Try again.",
+      seeCafe: (name: string) => `See ${name}`,
+      backToMap: "Back to the map",
+    },
   },
 
   score: {
     /** Shown instead of a score until a metric has enough ratings. */
     new: "New",
+    /** A rating not yet chosen, in the big readout. */
+    empty: "–",
   },
 
   drinkGroups: {
@@ -290,6 +401,8 @@ export const copy = {
   },
 
   a11y: {
+    starsNotRated: "Not rated",
+    starsValue: (value: string) => `${value} stars`,
     scoreGoogle: (metricLabel: string, rating: string) =>
       `${metricLabel}, no community score yet. Google rating ${rating}`,
     rateCafe: "Rate a cafe",

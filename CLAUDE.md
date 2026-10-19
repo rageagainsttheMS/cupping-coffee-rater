@@ -7,4 +7,4 @@
 - Leave changes uncommitted in the working tree by default. Staging with `git add` is also left to the user unless they ask.
 - Read-only git commands (`status`, `diff`, `log`) are fine.
 
-Note that all markdown files (with exception of this file), are listed in the /markdown folder in this repo. Always stop and read AGENTS.md and Technical Solution Design document before beginning a coding task. Before building any screen UI, refer to the screen designs in Product Design Ideas document.  
+Note that all markdown files (with exception of this file), are listed in the /markdown folder in this repo. Always stop and read AGENTS.md and Technical Solution Design document before beginning a coding task. Before building any screen UI, refer to the screen designs in Product Design Ideas document. If you can't find a design for the screen you are building, STOP and ask the user

@@ -46,7 +46,15 @@ const config: ExpoConfig = {
           "Coffee Rater uses your location to show cafes near you and to mark your reviews as verified visits.",
       },
     ],
-    "expo-image-picker",
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "Coffee Rater uses your photos so you can add one to a review.",
+        cameraPermission: "Coffee Rater uses your camera so you can add a photo to a review.",
+        // The app never records audio, so don't ask for the microphone permission.
+        microphonePermission: false,
+      },
+    ],
     "expo-image",
     "expo-secure-store",
     "expo-apple-authentication",
