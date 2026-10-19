@@ -466,10 +466,10 @@ a Google rating back onto the map is a future item: see "Extra things to conside
 2. **Name, suburb, distance, open status** ("Open till 4pm" from the live `places-details` call).
 3. **Score row:** four `ScoreTile`s (score + label, "New" under 3 ratings). Tapping a tile selects it and filters the section below to that metric.
 4. **Metric summary card** for the selected metric: "Work · 12 reviews", top tag chips with counts ("Wifi · 11", "Power outlets · 9"), and "Show all". Tag labels come from `cafe_detail` (the current label) and all other text from the copy file.
-5. **What to order:** top drinks by score with count and median price ("Magic · 14 people · about $5.80 · 4.8"). Drinks with fewer than 3 ratings are listed without a score.
-6. **Beans:** most-reported beans with count ("reported by 6 people").
-7. **Vibe:** top vibe tags as chips with counts.
-8. **Reviews:** cards with reviewer name, drink, the selected metric's rating badge, other ratings as small icons, comment, optional photo, price and a "Verified visit" badge. Filter by metric (from the tiles) or drink; sort by recent. Infinite scroll via `useInfiniteQuery`.
+5. **What to order** (Coffee only): top 3 drinks by score with count and median price ("Magic · 14 people · about $5.80 · 4.8"), "Show all" for the rest, and drinks with fewer than 3 ratings listed without a score. Tapping a drink filters the reviews to it (tap again to clear). Under it, one line for the most-reported beans ("Beans: Market Lane seasonal, reported by 6 people"). Food, Vibe and Work show only the summary card, so reviews are close.
+6. *(Merged into 5 and the summary card. Beans are one line; vibe tags show in the Vibe summary card.)*
+7. *(Removed: a separate Vibe section repeated the Vibe summary card.)*
+8. **Reviews:** cards with reviewer name, drink, the selected metric's rating badge, other ratings as small icons, comment, optional photo, price and a "Verified visit" badge. Filter by metric (from the tiles) or, in Coffee mode, drink (from What to order); sort by recent. Infinite scroll via `useInfiniteQuery`.
 9. **Sticky footer:** "Directions" (opens Google Maps / Apple Maps via the live `googleMapsUri` or `geo:` / `maps:` URL) and **"Rate this cafe"** (opens the wizard with this cafe pre-selected).
 
 ### 6.2 Google rating fallback
@@ -488,6 +488,27 @@ Optimistic toggle on `saved_cafes`, invalidating the Saved query.
 ### 6.5 Component tests 🧪
 
 React Native Testing Library: tiles show "New" under 3 ratings; tapping a tile filters reviews; the Google fallback appears only when the community score is null; empty review state.
+
+> **Status: complete.** Checked on a phone. Lint, types, 230 Jest tests and an Android bundle pass.
+> The route `app/cafe/[id].tsx` only wires data: `useCafeDetail`, `usePlaceDetails`, `useCafePhotos`,
+> `useSaveCafe` and an infinite `useCafeReviews`. Everything it draws is `features/cafe/CafeView.tsx`,
+> which takes its data as props (reviews as an injected hook), so it is tested without a network.
+> Pure logic is in `features/cafe/format.ts` (tested): the Google fallback rule, open status and
+> closing time from Google's weekday text, directions links, review ratings, drink scores.
+>
+> **How it behaves.** The page opens on the metric selected on the map. Tapping a tile switches the
+> summary card, the reviews title and the reviews filter. In Coffee mode a drink row in What to order narrows the reviews further.
+> Google's rating shows greyed out, labelled "Google", on the Coffee tile only while Coffee has no
+> community score. "Open till 4pm" is read from Google's text for today and falls back to "Open now"
+> when the hours can't be parsed (for example a 24-hour locale). Photos use signed links (1 hour),
+> cached for 30 minutes. The heart flips at once and rolls back with an alert if the request fails.
+> "Rate this cafe" pushes `/review?cafeId=…`; the wizard reads that param in M7. The Saved query key
+> (`saved-cafes`) is invalidated on save, ready for M8.
+>
+> **Only a phone can confirm:** the photo grid layout, the full-screen viewer, signed photo loading
+> (needs seed photos in Storage), Directions opening a maps app, and the `review_photos` query that
+> orders by the joined review's date. Not built from the list above: the "Still right?" beans
+> confirm and "sort by helpful" from the design doc, which this plan doesn't include.
 
 **Done when:** every section renders from seed data, the Google fallback shows for unrated real cafes with attribution, Directions opens a maps app, and save toggles.
 
@@ -831,7 +852,7 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
 - [ ] M3 `places-search` and `places-details` deployed with caching and field masks
 - [ ] M4 onboarding, email/Google/Apple sign-in, location step
 - [ ] M5 map with metric tabs, clustered score pins, "Rate first" dots, swipeable card, search
-- [ ] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
+- [x] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
 - [ ] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [ ] M8 Saved tab and Profile
 - [ ] M9 report, block, delete account, legal pages, moderation process

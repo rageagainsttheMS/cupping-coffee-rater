@@ -30,7 +30,6 @@ export const copy = {
     saved: "Saved",
     profile: "Profile",
     review: "Rate a cafe",
-    cafe: (id: string) => `Cafe ${id}`,
   },
 
   /** Stand-in screens, until the real ones are built. */
@@ -244,7 +243,55 @@ export const copy = {
     hint: "Type at least 2 letters.",
   },
 
+  cafe: {
+    back: "Back",
+    save: "Save cafe",
+    unsave: "Remove from saved",
+    saveFailed: "Couldn't update your saved cafes. Try again.",
+    photoPlaceholder: "No photos yet",
+    photoLabel: (n: number, total: number) => `Photo ${n} of ${total}. Open full screen`,
+    closePhoto: "Close photo",
+    openNow: "Open now",
+    openTill: (time: string) => `Open till ${time}`,
+    closed: "Closed",
+    google: "Google",
+    googleRating: (rating: string) => `Google rating ${rating}`,
+    reviewCount: (label: string, count: number) =>
+      `${label} · ${count} ${count === 1 ? "review" : "reviews"}`,
+    noTags: "No tags yet",
+    showAll: "Show all",
+    showFewer: "Show fewer",
+    order: {
+      title: "What to order",
+      people: (count: number) => `${count} ${count === 1 ? "person" : "people"}`,
+      price: (price: string) => `about ${price}`,
+    },
+    beans: {
+      line: (name: string, count: number) =>
+        `Beans: ${name}, reported by ${count} ${count === 1 ? "person" : "people"}`,
+    },
+    reviews: {
+      title: "Reviews",
+      forMetric: (label: string) => `Reviews · ${label}`,
+      verified: "Verified visit",
+      empty: (metricLabel: string) => `No ${metricLabel} reviews yet`,
+      emptyBody: "Be the first to rate it.",
+      loadError: "Couldn't load reviews.",
+      retry: "Try again",
+      by: (name: string, date: string) => `${name} · ${date}`,
+      ratingLabel: (label: string, rating: string) => `${label} ${rating}`,
+    },
+    directions: "Directions",
+    rate: "Rate this cafe",
+    notFound: "We couldn't find that cafe",
+    loadError: "We couldn't load this cafe",
+    loadErrorBody: "Check your connection and try again.",
+    retry: "Try again",
+  },
+
   a11y: {
+    scoreGoogle: (metricLabel: string, rating: string) =>
+      `${metricLabel}, no community score yet. Google rating ${rating}`,
     rateCafe: "Rate a cafe",
     scoreNew: (metricLabel: string) => `${metricLabel}, new`,
     scoreRated: (metricLabel: string, score: number, count: number) =>
