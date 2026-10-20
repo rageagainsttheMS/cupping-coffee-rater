@@ -58,6 +58,22 @@ const config: ExpoConfig = {
     "expo-image",
     "expo-secure-store",
     "expo-apple-authentication",
+    [
+      "expo-build-properties",
+      {
+        // R8 stripped a class WorkManager (pulled in by react-native-maps) needs, so release builds
+        // crashed on launch. Turn this back on only with keep rules and a release build that opens.
+        android: {
+          enableMinifyInReleaseBuilds: false,
+          // Test builds only run on a phone, so build arm64 alone. Faster, and a smaller APK. Production
+          // keeps every architecture. (EAS sets EAS_BUILD_PROFILE; local builds use the default.)
+          ...(process.env.EAS_BUILD_PROFILE === "development" ||
+          process.env.EAS_BUILD_PROFILE === "preview"
+            ? { buildArchs: ["arm64-v8a"] }
+            : {}),
+        },
+      },
+    ],
     // Crash reporting. Source maps upload during EAS builds when SENTRY_AUTH_TOKEN is set.
     ["@sentry/react-native/expo", { organization: "williamw", project: "cupping" }],
     // Google sign-in. The plugin only adds the iOS URL scheme (Android needs nothing from it) and
