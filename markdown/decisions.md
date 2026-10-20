@@ -51,6 +51,14 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 
 **Decided 20 Oct 2026: none.** The Saved tab is the title over a list, newest saved first. The chips in the design (All, Best coffee, Good for work, and a cut-off "Open now") are dropped. "Open now" was already out because of the Google data decision. The list is short in Phase 1, and the other chips repeated what the map's metric tabs do. The Product Design doc's text was updated; its Saved image still shows the chips.
 
+### Profile settings rows
+
+**Decided 20 Oct 2026.** Built to the Profile design with two changes. **Notifications is dropped**: nothing sends notifications in Phase 1, so the row would do nothing. **Appearance (System, Light, Dark) is added** to Settings, because the plan needs a theme setting and the design has no other place for it. "Account and password" opens a small screen that emails a password reset link (Blocked users and Delete account join it in M9). "Help and feedback" holds Contact us, Terms, Privacy, the Google attribution notice and the app version; rows without a published address stay hidden until M9.5. The Product Design doc's text says so; its Profile image still shows Notifications.
+
+### My reviews
+
+**Decided 20 Oct 2026: built as designed.** Four chips, one at a time (Newest, Highest rated, By cafe, Has photo), and a three-dot menu with Delete review. "Highest rated" orders by the average of the ratings the review gave. Deleting is permanent and removes the photo file. Editing a review is not included.
+
 ### Single or combined metric tabs
 
 **Decided: single-select.** Matches the chosen map screen. Combined tabs ("show the lower score") are Phase 2.

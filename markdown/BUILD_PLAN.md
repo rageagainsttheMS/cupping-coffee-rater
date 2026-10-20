@@ -643,14 +643,37 @@ Coffee is required to continue; "Didn't try" sends null; the comment counter blo
 
 ### 8.2 Profile tab
 
-- Header: display name (editable), avatar initial, member since, review count.
-- **My reviews:** list of the user's reviews; delete own review.
-- **Settings:** location permission status with a link to system settings, theme (System / Light / Dark).
-- **Safety:** Blocked users (list, unblock) — M9.
-- **About:** Terms of Use, Privacy Policy, Contact us (email link), Google attribution notice, app version.
-- **Sign out** and **Delete account** — M9.
+Designs: Profile and My reviews, in the Product Design doc (added 20 Oct 2026).
 
-**Done when:** saving from the map card or cafe page shows up in Saved with working filters, and every Profile row works (M9 rows may be stubs until M9).
+- **Header card:** avatar initial, display name and email, with **Edit** (the name becomes a text field with Save and Cancel; 1 to 40 characters).
+- **Counts:** Reviews, Cafes (different cafes reviewed) and Saved.
+- **Activity:** **My reviews** (opens the My reviews screen) and **Saved cafes** (switches to the Saved tab), each with its count.
+- **Settings:** **Location** (shows While using, Not allowed or Not set, and opens the system settings), **Appearance** (its own screen: System, Light, Dark with a tick on the current one; saved in AsyncStorage), **Account and password** (screen: email, and "Email me a link" to choose a new password), **Help and feedback** (screen: Contact us, Terms of Use, Privacy Policy, Google attribution notice, app version).
+- **Sign out.**
+- Not in the design, so not built: Notifications (nothing sends them in Phase 1). Blocked users and Delete account are added to Account and password in M9.
+
+### 8.3 My reviews
+
+- A screen outside the tabs (`app/my-reviews.tsx`), opened from Profile. Back button, title, "12 reviews across 9 cafes".
+- **Chips (one at a time):** Newest (default), Highest rated (average of the ratings given), By cafe (A to Z), Has photo (only reviews with a photo).
+- **Card:** cafe name, "Suburb · 2 days ago", four rating tiles (a dash where a metric was skipped), a pill per drink, the comment, the photo thumbnail, and "$5.80 · beans". Tapping the cafe opens its page.
+- **Three-dot menu → Delete review**, with a confirmation. It deletes the review (scores recompute, since they are views), removes the photo file, and refreshes the map, cafe, saved and profile data.
+- `my_reviews()` is migration `20261020100000`, with `supabase/tests/11_my_reviews.test.sql` (own reviews only, hidden ones excluded, newest first, drinks, ratings and photo, anon refused).
+- Empty state ("Rate a cafe"), loading, and error with retry.
+
+> **Status of 8.2 and 8.3: built, not yet checked on a phone.** Lint, types, formatting, 345 Jest tests and
+> 167 pgTAP tests pass. `database.types.ts` was regenerated. The screens draw from props
+> (`features/profile/ProfileView.tsx`, `MyReviewsView.tsx`, `MyReviewCard.tsx`); the routes only wire data.
+> Pure logic is in `features/profile/myReviews.ts` (ordering, counts, "2 days ago", price line) and
+> `locationStatus.ts`, both tested. **Differences from the design:** the Notifications row is dropped and an
+> Appearance row is added (the plan needed a theme setting and the design had no place for it). Contact us,
+> Terms and Privacy are hidden on the Help screen until M9.5 fills in `CONTACT_EMAIL` and `LEGAL_URLS` in
+> `src/lib/links.ts`. The "Member since" line from the earlier plan is not shown, as the design has none.
+> **Only a phone can confirm:** the layout of both screens, Location opening system settings and updating on
+> return, the Appearance screen switching the theme, the password email arriving, deleting a review with a photo, and the scores
+> moving on the map afterwards.
+
+**Done when:** saving from the map card or cafe page shows up in Saved, and every Profile row works (M9 rows are added in M9).
 
 ---
 

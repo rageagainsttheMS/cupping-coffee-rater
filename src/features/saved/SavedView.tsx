@@ -65,7 +65,12 @@ export function SavedView({
             cafe={item}
             distance={distanceTo(item, position)}
             onPress={() => onOpen(item)}
-            onUnsave={() => onUnsave(item, cafes.findIndex((c) => c.id === item.id))}
+            onUnsave={() =>
+              onUnsave(
+                item,
+                cafes.findIndex((c) => c.id === item.id),
+              )
+            }
           />
         )}
       />

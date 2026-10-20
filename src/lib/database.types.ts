@@ -389,6 +389,11 @@ isOneToOne: false
 "count_cafes_in_box":
 { Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number }; Returns: number
                            },
+"my_reviews":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "beans": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"suburb": string,"verified": boolean,"visit_date": string
+            }[]
+                           },
 "my_saved_cafes":
 { Args: Record<PropertyKey, never>; Returns: {
               "coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"id": string,"last_drink_name": string,"last_rating": number,"lat": number,"lng": number,"name": string,"saved_at": string,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number

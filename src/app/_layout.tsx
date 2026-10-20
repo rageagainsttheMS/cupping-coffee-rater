@@ -97,6 +97,10 @@ function AppShell() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="search" />
             <Stack.Screen name="cafe/[id]" />
+            <Stack.Screen name="my-reviews" />
+            <Stack.Screen name="appearance" />
+            <Stack.Screen name="account" />
+            <Stack.Screen name="help" />
             <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
           </Stack.Protected>
           <Stack.Screen name="index" />
