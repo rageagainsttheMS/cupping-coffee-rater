@@ -18,6 +18,16 @@ function ratedMetrics(values: WizardValues): Set<Metric> {
   return rated;
 }
 
+/** Tags that are still active and belong to a metric the review rates. The server rejects the rest. */
+export function usableTagIds(values: WizardValues, tags: readonly ReferenceTag[]): number[] {
+  const rated = ratedMetrics(values);
+  const metricOf = new Map(tags.map((t) => [t.id, t.metric]));
+  return dropInactiveTagIds(values.tagIds, tags).filter((id) => {
+    const metric = metricOf.get(id);
+    return metric !== undefined && rated.has(metric);
+  });
+}
+
 /**
  * Turns the form into the shared review shape and checks it with the review schema. Tags are kept
  * only if they are still active and belong to a metric that was rated: the server rejects the rest,
@@ -28,12 +38,7 @@ export function buildReviewInput(
   tags: readonly ReferenceTag[],
   extras: { location?: Location | null; photo?: UploadedPhoto | null } = {},
 ) {
-  const rated = ratedMetrics(values);
-  const metricOf = new Map(tags.map((t) => [t.id, t.metric]));
-  const tagIds = dropInactiveTagIds(values.tagIds, tags).filter((id) => {
-    const metric = metricOf.get(id);
-    return metric !== undefined && rated.has(metric);
-  });
+  const tagIds = usableTagIds(values, tags);
 
   const drinks = values.drinks.flatMap((d) =>
     d.drinkId === null || d.rating === null

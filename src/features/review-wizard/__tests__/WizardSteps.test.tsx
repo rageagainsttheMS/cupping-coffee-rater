@@ -24,6 +24,7 @@ jest.mock("expo-router", () => ({
   },
   usePathname: () => mockPathname,
   useLocalSearchParams: () => ({}),
+  useGlobalSearchParams: () => ({}),
   useFocusEffect: (callback: () => void) =>
     jest.requireActual("react").useEffect(callback, [callback]),
 }));

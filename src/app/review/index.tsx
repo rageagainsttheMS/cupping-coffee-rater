@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { router, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { Button } from "@/components/Button";
@@ -36,6 +36,9 @@ export default function CafeStep() {
     if (resumeStep !== "cafe") router.replace(STEP_ROUTES[resumeStep]);
   }, [resumeStep, clearResume]);
   if (resumeStep && resumeStep !== "cafe") return null;
+
+  // Editing a posted review skips the cafe: it cannot change.
+  if (wizard.editing) return <Redirect href="/review/rate" />;
 
   if (cafeId) return <CafeFromPage cafeId={cafeId} />;
   return <ChooseCafe />;

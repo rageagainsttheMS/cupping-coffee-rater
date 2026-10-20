@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import { router, usePathname } from "expo-router";
+import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import {
   createContext,
   useCallback,
@@ -11,13 +11,17 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import { AppState } from "react-native";
+import { Alert, AppState } from "react-native";
 import { useForm, useWatch } from "react-hook-form";
 import type { OptionalMetric } from "@/domain/metrics";
 import { wizardDrinks } from "@/domain/reference";
+import type { MyReview } from "@/features/profile/types";
+import { useMyReviews } from "@/features/profile/useMyReviews";
+import { copy } from "@/lib/copy/en";
 import type { ReferenceDrink, ReferenceTag } from "@/domain/reference";
 import { useReferenceData } from "@/lib/referenceData";
 import { clearDraft, loadDraft, saveDraft } from "./draft";
+import { editBack, editNext, hasChanges, reviewToValues } from "./edit";
 import type { StoredDraft } from "./draft";
 import type { ScoreChanges } from "./outcome";
 import { ResumePrompt } from "./ResumePrompt";
@@ -66,6 +70,10 @@ type WizardContextValue = {
 
   posted: PostedState | null;
   setPosted: (update: PostedState | ((previous: PostedState | null) => PostedState | null)) => void;
+  /** The wizard is editing a review that is already posted (opened with `editId`). */
+  editing: boolean;
+  /** The values the edit started from, to tell whether anything changed. */
+  editInitial: WizardValues | null;
   /** True while the person is adding to a review that is already posted. */
   editingPosted: boolean;
   setEditingPosted: (editing: boolean) => void;
@@ -85,18 +93,23 @@ type Gate = { state: "loading" } | { state: "ask"; draft: StoredDraft } | { stat
  * Holds the review being written for the whole wizard: one form, the saved draft, and moving
  * between steps. On opening it offers to continue a draft less than a day old.
  */
-export function ReviewWizardProvider({ children }: { children: ReactNode }) {
+function WizardProvider({ children, edit }: { children: ReactNode; edit: MyReview | null }) {
   const { data: reference } = useReferenceData();
-  const form = useForm<WizardValues>({ defaultValues: blankValues(Crypto.randomUUID()) });
+  const form = useForm<WizardValues>({
+    defaultValues: edit ? reviewToValues(edit) : blankValues(Crypto.randomUUID()),
+  });
   const values = useWatch({ control: form.control }) as WizardValues;
 
-  const [gate, setGate] = useState<Gate>({ state: "loading" });
+  const [gate, setGate] = useState<Gate>({ state: edit ? "ready" : "loading" });
   const [drinkIndex, setDrinkIndex] = useState(0);
   const [cafeLocked, setCafeLocked] = useState(false);
   const [resumeStep, setResumeStep] = useState<WizardStep | null>(null);
   const [posted, setPosted] = useState<PostedState | null>(null);
   const [editingPosted, setEditingPosted] = useState(false);
 
+  // Editing starts from the loaded review, as a form that is ready at once. Otherwise a new review.
+  const editInitial = useMemo(() => (edit ? reviewToValues(edit) : null), [edit]);
+  const editing = editInitial !== null;
   const tags = reference.tags;
   const drinks = useMemo(() => wizardDrinks(reference.drinks), [reference.drinks]);
 
@@ -106,6 +119,7 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
     tagsRef.current = tags;
   }, [tags]);
   useEffect(() => {
+    if (editing) return;
     let cancelled = false;
     loadDraft(AsyncStorage, tagsRef.current).then((draft) => {
       if (cancelled) return;
@@ -114,15 +128,16 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [editing]);
 
   // The latest form and position, for saving from event handlers without stale values.
   const pathname = usePathname();
   const step = stepFromPath(pathname);
   const latest = useRef({ values, step, drinkIndex, ready: false });
   useEffect(() => {
-    latest.current = { values, step, drinkIndex, ready: gate.state === "ready" };
-  }, [values, step, drinkIndex, gate.state]);
+    // An edit is never saved as a draft, and must not touch the draft of a review in progress.
+    latest.current = { values, step, drinkIndex, ready: gate.state === "ready" && !editing };
+  }, [values, step, drinkIndex, gate.state, editing]);
 
   const persist = useCallback(() => {
     const { values: current, step: at, drinkIndex: index, ready } = latest.current;
@@ -157,10 +172,12 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
   // Refs the stable actions read, so they never use an old position.
   const drinkIndexRef = useRef(drinkIndex);
   const cafeLockedRef = useRef(cafeLocked);
+  const editInitialRef = useRef(editInitial);
   useEffect(() => {
     drinkIndexRef.current = drinkIndex;
     cafeLockedRef.current = cafeLocked;
-  }, [drinkIndex, cafeLocked]);
+    editInitialRef.current = editInitial;
+  }, [drinkIndex, cafeLocked, editInitial]);
 
   const actions = useMemo(() => {
     const current = () => form.getValues();
@@ -173,6 +190,16 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
     const goTo = (target: WizardStep, index?: number) => {
       if (index !== undefined) setDrinkIndex(index);
       router.replace(STEP_ROUTES[target]);
+    };
+
+    // Leaving an edit asks first if anything changed.
+    const leaveEdit = () => {
+      const initial = editInitialRef.current;
+      if (!initial || !hasChanges(initial, current())) return router.back();
+      Alert.alert(copy.review.edit.discardTitle, copy.review.edit.discardBody, [
+        { text: copy.review.edit.keepEditing, style: "cancel" },
+        { text: copy.review.edit.discard, style: "destructive", onPress: () => router.back() },
+      ]);
     };
 
     return {
@@ -206,11 +233,22 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
       setPhoto: (photo: WizardPhoto | null) => update({ photo }),
       goTo,
       goNext: (from: WizardStep) => {
+        if (editInitialRef.current) {
+          const next = editNext(from, drinkIndexRef.current, current().drinks.length);
+          if (next.to !== "save") goTo(next.to, next.drinkIndex);
+          return;
+        }
         const to = nextStep(from);
         if (to) goTo(to);
       },
       goBack: (from: WizardStep) => {
         const { drinks: list } = current();
+        if (editInitialRef.current) {
+          const back = editBack(from, drinkIndexRef.current, list.length);
+          if (back.to === "close") leaveEdit();
+          else goTo(back.to, back.drinkIndex);
+          return;
+        }
         const target = backTarget(from, drinkIndexRef.current, list.length, cafeLockedRef.current);
         if (target.to === "close") {
           router.back();
@@ -226,7 +264,7 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
         }
         goTo(target.to, target.drinkIndex);
       },
-      close: () => router.back(),
+      close: () => (editInitialRef.current ? leaveEdit() : router.back()),
     };
   }, [form, update]);
 
@@ -245,6 +283,8 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
     discardDraft,
     posted,
     setPosted,
+    editing,
+    editInitial,
     editingPosted,
     setEditingPosted,
   };
@@ -272,4 +312,33 @@ export function ReviewWizardProvider({ children }: { children: ReactNode }) {
   }
 
   return <WizardContext.Provider value={value}>{children}</WizardContext.Provider>;
+}
+
+/** Opened with `editId` (from My reviews): load that review first, then start the wizard on it. */
+function EditLoader({ editId, children }: { editId: string; children: ReactNode }) {
+  const myReviews = useMyReviews();
+  const review = myReviews.data?.find((r) => r.review_id === editId) ?? null;
+  const failed = myReviews.isError || (myReviews.data !== undefined && !review);
+
+  useEffect(() => {
+    if (!failed) return;
+    Alert.alert(copy.review.edit.loadFailed);
+    router.back();
+  }, [failed]);
+
+  if (!review) return null;
+  return <WizardProvider edit={review}>{children}</WizardProvider>;
+}
+
+/**
+ * Holds the review being written for the whole wizard. Opened with an `editId` it edits that posted
+ * review instead; the id is read once, since later steps are on routes without it.
+ */
+export function ReviewWizardProvider({ children }: { children: ReactNode }) {
+  const params = useGlobalSearchParams<{ editId?: string | string[] }>();
+  const [editId] = useState(() =>
+    Array.isArray(params.editId) ? params.editId[0] : params.editId,
+  );
+  if (editId) return <EditLoader editId={editId}>{children}</EditLoader>;
+  return <WizardProvider edit={null}>{children}</WizardProvider>;
 }

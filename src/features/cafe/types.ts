@@ -55,6 +55,8 @@ export type CafeReview = {
   /** `YYYY-MM-DD`. */
   visit_date: string;
   created_at: string;
+  /** Set once the review has been edited. */
+  edited_at: string | null;
   comment: string;
   beans: string | null;
   verified: boolean;

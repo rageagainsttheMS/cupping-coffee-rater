@@ -170,7 +170,7 @@ export default function ExtrasStep() {
     <WizardScreen
       step="extras"
       title={copy.review.extras.title}
-      continueLabel={anyRated ? copy.review.continue : copy.common.skip}
+      continueLabel={anyRated || wizard.editing ? copy.review.continue : copy.common.skip}
       onContinue={() => wizard.goNext("extras")}
     >
       <Text muted>{copy.review.extras.body}</Text>

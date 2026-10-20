@@ -7,12 +7,14 @@ import { fonts, radius, spacing } from "@/lib/theme/tokens";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useWizard } from "@/features/review-wizard/ReviewWizardProvider";
 import { canContinue, commentLength } from "@/features/review-wizard/steps";
+import { useSaveEdit } from "@/features/review-wizard/useSaveEdit";
 import { WizardScreen } from "@/features/review-wizard/WizardScreen";
 
 /** Step 5. A few words, 10 to 280 characters, under pills showing what was rated. */
 export default function CommentStep() {
   const { colors, metrics } = useTheme();
-  const { values, drinks, setComment, goNext } = useWizard();
+  const { values, drinks, setComment, goNext, editing } = useWizard();
+  const saveEdit = useSaveEdit();
   const length = commentLength(values.comment);
   const firstDrink = drinks.find((d) => d.id === values.drinks[0]?.drinkId)?.name ?? "";
 
@@ -43,7 +45,9 @@ export default function CommentStep() {
       step="comment"
       title={copy.review.comment.title}
       canContinue={canContinue("comment", values, 0)}
-      onContinue={() => goNext("comment")}
+      continueLabel={editing ? copy.review.edit.saveChanges : undefined}
+      busy={editing ? saveEdit.isPending : undefined}
+      onContinue={() => (editing ? saveEdit.save() : goNext("comment"))}
     >
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
         {pills.map((pill) => (

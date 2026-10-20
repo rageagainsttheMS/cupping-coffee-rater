@@ -19,7 +19,13 @@ type Props = {
 /** One of the person's reviews: the cafe, its four ratings, what they drank and what they said. */
 export function MyReviewCard({ review, now, onOpenCafe, onOpenMenu }: Props) {
   const { colors, metrics } = useTheme();
-  const where = [review.suburb, relativeAge(review.created_at, now)].filter(Boolean).join(" · ");
+  const where = [
+    review.suburb,
+    relativeAge(review.created_at, now),
+    review.edited_at ? copy.profile.myReviews.edited : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const details = detailsLine(review);
 
   return (

@@ -47,3 +47,19 @@ export const reviewSchema = z.object({
 });
 
 export type ReviewInput = z.infer<typeof reviewSchema>;
+
+/**
+ * What an edit sends: the new ratings, tags and comment. The cafe, drinks, price, beans and photo
+ * cannot change, so each drink is only its id and new rating. Null means "Didn't try".
+ */
+export const reviewEditSchema = z.object({
+  reviewId: z.uuid(),
+  drinks: z.array(z.object({ drinkId: z.number().int().positive(), rating })).min(1),
+  food: optionalRating,
+  vibe: optionalRating,
+  work: optionalRating,
+  tagIds: z.array(z.number().int().positive()),
+  comment: z.string().trim().min(COMMENT_MIN).max(COMMENT_MAX),
+});
+
+export type ReviewEditInput = z.infer<typeof reviewEditSchema>;

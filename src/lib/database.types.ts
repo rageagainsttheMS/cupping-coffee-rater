@@ -205,14 +205,14 @@ isOneToOne: false
                   ]
                 },"reviews": {
                   Row: {
-                    "beans": string | null,"cafe_id": string,"comment": string,"created_at": string,"hidden_at": string | null,"id": string,"user_id": string,"verified": boolean,"visit_date": string
+                    "beans": string | null,"cafe_id": string,"comment": string,"created_at": string,"edited_at": string | null,"hidden_at": string | null,"id": string,"user_id": string,"verified": boolean,"visit_date": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "beans"?: string | null,"cafe_id": string,"comment": string,"created_at"?: string,"hidden_at"?: string | null,"id"?: string,"user_id": string,"verified"?: boolean,"visit_date"?: string
+                    "beans"?: string | null,"cafe_id": string,"comment": string,"created_at"?: string,"edited_at"?: string | null,"hidden_at"?: string | null,"id"?: string,"user_id": string,"verified"?: boolean,"visit_date"?: string
                   }
                   Update: {
-                    "beans"?: string | null,"cafe_id"?: string,"comment"?: string,"created_at"?: string,"hidden_at"?: string | null,"id"?: string,"user_id"?: string,"verified"?: boolean,"visit_date"?: string
+                    "beans"?: string | null,"cafe_id"?: string,"comment"?: string,"created_at"?: string,"edited_at"?: string | null,"hidden_at"?: string | null,"id"?: string,"user_id"?: string,"verified"?: boolean,"visit_date"?: string
                   }
                   Relationships: [
                     {
@@ -378,7 +378,7 @@ isOneToOne: false
                            },
 "cafe_reviews":
 { Args: { "p_before_created_at"?: string,"p_before_id"?: string,"p_cafe_id": string,"p_drink_id"?: number,"p_metric"?: Database["public"]['Enums']["metric"],"p_page_size"?: number,"p_sort"?: string }; Returns: {
-              "author_name": string,"beans": string,"comment": string,"created_at": string,"drinks": Json,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"tags": Json,"user_id": string,"verified": boolean,"visit_date": string
+              "author_name": string,"beans": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"tags": Json,"user_id": string,"verified": boolean,"visit_date": string
             }[]
                            },
 "cafes_in_view":
@@ -391,7 +391,7 @@ isOneToOne: false
                            },
 "my_reviews":
 { Args: Record<PropertyKey, never>; Returns: {
-              "beans": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"suburb": string,"verified": boolean,"visit_date": string
+              "beans": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"suburb": string,"tags": Json,"verified": boolean,"visit_date": string
             }[]
                            },
 "my_saved_cafes":
@@ -422,6 +422,9 @@ isOneToOne: false
                            },
 "submit_review":
 { Args: { "p_beans"?: string,"p_cafe_id": string,"p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_lat"?: number,"p_lng"?: number,"p_photo_height"?: number,"p_photo_path"?: string,"p_photo_width"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
+                           },
+"update_review":
+{ Args: { "p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
                            },
 "update_review_ratings":
 { Args: { "p_food"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json

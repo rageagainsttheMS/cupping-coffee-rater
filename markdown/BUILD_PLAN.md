@@ -673,7 +673,7 @@ Designs: Profile and My reviews, in the Product Design doc (added 20 Oct 2026).
 > return, the Appearance screen switching the theme, the password email arriving, deleting a review with a photo, and the scores
 > moving on the map afterwards.
 
-### 8.4 Edit review (planned, added 20 Oct 2026)
+### 8.4 Edit review (added 20 Oct 2026)
 
 No design image yet: it reuses the review wizard screens, so the existing designs apply. Start with the pgTAP tests (🧪).
 
@@ -681,8 +681,25 @@ No design image yet: it reuses the review wizard screens, so the existing design
 - **No time limit.** Scores are views, so they recompute at once. This replaces the 24-hour limit of `update_review_ratings` for edits from My reviews; the Posted-screen follow-up keeps using that function.
 - **Marker:** `reviews.edited_at timestamptz` (null until first edit). `cafe_reviews` and `my_reviews` return it, and review cards on the cafe page and in My reviews show a small "Edited" label.
 - **Database 🧪:** `update_review(review_id, drinks, food, vibe, work, tags, comment)` in a migration, own review only, hidden reviews refused, one rating per existing drink (drinks can't be added or removed), tags only for rated metrics and only active ones, comment length rules, sets `edited_at`, returns before and after scores like `submit_review`. Edits don't count toward the review rate limit. pgTAP: another user's review is refused; a rating for a drink not on the review is refused; clearing Work removes its tags; `edited_at` is set; scores move; anon refused.
-- **App:** **Edit review** in the My reviews three-dot menu opens `/review?editId=…`. The wizard loads the review into the form (not a draft; leave the draft alone), skips the cafe, drink and details steps, and goes rate → extras → comment, with the last button "Save changes". Close asks before discarding changes. On save it invalidates My reviews, the cafe, map and saved queries, shows a short confirmation and returns to My reviews. Errors in plain language, as for posting.
+- **App:** **Edit review** in the My reviews three-dot menu opens `/review?editId=…`. The wizard loads the review into the form (not a draft; leave the draft alone), skips the cafe, drink and details steps, and goes rate → extras → comment, with the last button "Save changes". Close asks before discarding changes. On save it invalidates My reviews, the cafe, map and saved queries and returns to My reviews, where the "Edited" label is the confirmation. A save with nothing changed just closes, so a review is not marked Edited for no reason. Errors in plain language, as for posting.
 - **Jest 🧪:** the form loads from a review; the skipped steps; "Save changes" sends only the editable fields; the "Edited" label shows only when `edited_at` is set; clearing a metric drops its tags.
+
+> **Status of 8.4: built, not yet checked on a phone.** Lint, types, formatting, 366 Jest tests and 190 pgTAP
+> tests pass. **Database:** migration `20261020110000` adds `reviews.edited_at`, recreates `cafe_reviews` and
+> `my_reviews` (both now return `edited_at`; `my_reviews` also returns the tags), and adds
+> `update_review(review_id, drinks, food, vibe, work, tags, comment)`, with
+> `supabase/tests/12_update_review.test.sql`. The drinks sent must be exactly the review's own, with only
+> their ratings changing; Food, Vibe and Work are the full new state (null removes the rating and that
+> metric's tags); tags are replaced. `database.types.ts` was regenerated.
+> **App:** the My reviews ⋮ menu has Edit review, which opens `/review?editId=…`. `ReviewWizardProvider`
+> reads the id once and, through an `EditLoader`, starts the wizard already filled in from `my_reviews()`
+> (no draft is read or written). Pure logic is in `features/review-wizard/edit.ts` (load, validate,
+> arguments, "has anything changed", step order), all tested; `useSaveEdit` saves. The steps are Rate (one per
+> drink, no "+ Another drink"), Extras and Comment ("Save changes"), shown as "Step N of 3". Leaving after
+> changes asks "Discard your changes?". Review cards on the cafe page and in My reviews show "Edited".
+> **Behaviour to know:** a tag that has since been retired is dropped when its review is edited, as it
+> is when posting. **Only a phone can confirm:** the whole edit flow on a device, with a two-drink review, and
+> the Edited label appearing on the cafe page.
 
 **Done when:** saving from the map card or cafe page shows up in Saved, and every Profile row works (M9 rows are added in M9).
 

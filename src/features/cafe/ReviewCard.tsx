@@ -52,6 +52,11 @@ export function ReviewCard({ review, metric, drinkId, onOpenPhoto }: Props) {
           <Text variant="bodyStrong">
             {copy.cafe.reviews.by(review.author_name, formatVisitDate(review.visit_date))}
           </Text>
+          {review.edited_at ? (
+            <Text variant="caption" muted>
+              {copy.cafe.reviews.edited}
+            </Text>
+          ) : null}
           {review.drinks.map((drink) => (
             <Text key={drink.drink_id} variant="caption" muted>
               {drinkLine(drink)}

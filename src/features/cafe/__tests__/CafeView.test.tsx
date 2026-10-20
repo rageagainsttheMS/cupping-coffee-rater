@@ -61,6 +61,7 @@ const review = (over: Partial<CafeReview> = {}): CafeReview => ({
   author_name: "Sam",
   visit_date: "2026-10-18",
   created_at: "2026-10-18T01:00:00Z",
+  edited_at: null,
   comment: "Great flat white and a good table by the window.",
   beans: null,
   verified: true,

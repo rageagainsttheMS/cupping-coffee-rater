@@ -10,6 +10,7 @@ import { copy } from "@/lib/copy/en";
 import { radius, spacing } from "@/lib/theme/tokens";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useWizard } from "./ReviewWizardProvider";
+import { EDIT_STEPS, editStepNumber } from "./edit";
 import { stepNumber, TOTAL_STEPS } from "./steps";
 import type { WizardStep } from "./types";
 
@@ -52,7 +53,8 @@ export function WizardScreen({
 }: Props) {
   const { colors, metrics } = useTheme();
   const wizard = useWizard();
-  const number = stepNumber(step);
+  const number = wizard.editing ? editStepNumber(step) : stepNumber(step);
+  const total = wizard.editing ? EDIT_STEPS.length : TOTAL_STEPS;
   const { goBack } = wizard;
   const back = useCallback(() => (onBack ? onBack() : goBack(step)), [onBack, goBack, step]);
 
@@ -74,7 +76,7 @@ export function WizardScreen({
         >
           <CircleButton icon="arrow-left" accessibilityLabel={copy.common.back} onPress={back} />
           <Text variant="label" muted>
-            {copy.review.stepOf(number, TOTAL_STEPS)}
+            {copy.review.stepOf(number, total)}
           </Text>
           <CircleButton
             icon="close"
@@ -85,8 +87,8 @@ export function WizardScreen({
         <View
           accessible
           accessibilityRole="progressbar"
-          accessibilityLabel={copy.review.progress(number, TOTAL_STEPS)}
-          accessibilityValue={{ min: 0, max: TOTAL_STEPS, now: number }}
+          accessibilityLabel={copy.review.progress(number, total)}
+          accessibilityValue={{ min: 0, max: total, now: number }}
           style={{
             height: 6,
             borderRadius: radius.pill,
@@ -96,7 +98,7 @@ export function WizardScreen({
         >
           <View
             style={{
-              width: `${(number / TOTAL_STEPS) * 100}%`,
+              width: `${(number / total) * 100}%`,
               height: "100%",
               borderRadius: radius.pill,
               backgroundColor: metrics.coffee.strong,

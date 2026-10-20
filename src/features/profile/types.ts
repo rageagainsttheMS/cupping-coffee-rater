@@ -13,12 +13,15 @@ export type MyReview = {
   /** `YYYY-MM-DD`. */
   visit_date: string;
   created_at: string;
+  /** Set once the review has been edited. */
+  edited_at: string | null;
   comment: string;
   beans: string | null;
   verified: boolean;
   drinks: ReviewDrink[];
   /** Food, vibe and work only. Coffee is the drinks' ratings. Unrated metrics are missing. */
   ratings: Partial<Record<Exclude<Metric, "coffee">, number>>;
+  tags: { tag_id: number; metric: Metric; label: string }[];
   photo_path: string | null;
   photo_width: number | null;
   photo_height: number | null;

@@ -35,6 +35,11 @@ export default function MyReviewsScreen() {
         }
         onOpenMenu={(review) =>
           Alert.alert(review.cafe_name, undefined, [
+            {
+              text: text.edit,
+              onPress: () =>
+                router.push({ pathname: "/review", params: { editId: review.review_id } }),
+            },
             { text: text.delete, style: "destructive", onPress: () => confirmDelete(review) },
             { text: copy.profile.cancel, style: "cancel" },
           ])

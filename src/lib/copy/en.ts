@@ -49,6 +49,16 @@ export const copy = {
     stepOf: (step: number, total: number) => `Step ${step} of ${total}`,
     progress: (step: number, total: number) => `Review progress, step ${step} of ${total}`,
     continue: "Continue",
+    edit: {
+      saveChanges: "Save changes",
+      discardTitle: "Discard your changes?",
+      discardBody: "Your edits to this review won't be saved.",
+      keepEditing: "Keep editing",
+      discard: "Discard",
+      loadFailed: "Couldn't open this review. Try again.",
+      saveFailed: "Couldn't save your changes. Try again.",
+      networkFailed: "Couldn't save your changes. Check your connection and try again.",
+    },
     resume: {
       title: (cafe: string) => `Continue your review of ${cafe}?`,
       titleNoCafe: "Continue your review?",
@@ -387,6 +397,8 @@ export const copy = {
     rowLabel: (label: string, value: string) => (value ? `${label}, ${value}` : label),
     myReviews: {
       title: "My reviews",
+      edit: "Edit review",
+      edited: "Edited",
       summary: (reviews: number, cafes: number) =>
         `${reviews} ${reviews === 1 ? "review" : "reviews"} across ${cafes} ${cafes === 1 ? "cafe" : "cafes"}`,
       chips: {
@@ -485,6 +497,7 @@ export const copy = {
       title: "Reviews",
       forMetric: (label: string) => `Reviews · ${label}`,
       verified: "Verified visit",
+      edited: "Edited",
       empty: (metricLabel: string) => `No ${metricLabel} reviews yet`,
       emptyBody: "Be the first to rate it.",
       loadError: "Couldn't load reviews.",

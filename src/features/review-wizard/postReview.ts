@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import type { ReferenceTag } from "@/domain/reference";
 import { supabase } from "@/lib/supabase";
+import { buildEditInput, toUpdateArgs } from "./edit";
 import { PhotoUploadError } from "./errors";
 import type { ScoreChanges } from "./outcome";
 import { buildReviewInput, toSubmitArgs } from "./submission";
@@ -130,6 +131,18 @@ export async function updateRatings(args: {
     p_work: values.work ?? undefined,
     p_tags: tagIds,
   });
+  if (error) throw error;
+  return data as unknown as UpdateResult;
+}
+
+/** Saves an edited review's ratings, tags and comment. Nothing else about the review can change. */
+export async function editReview(args: {
+  values: WizardValues;
+  tags: readonly ReferenceTag[];
+}): Promise<UpdateResult> {
+  const parsed = buildEditInput(args.values, args.tags);
+  if (!parsed.success) throw new InvalidReviewError();
+  const { data, error } = await supabase.rpc("update_review", toUpdateArgs(parsed.data));
   if (error) throw error;
   return data as unknown as UpdateResult;
 }

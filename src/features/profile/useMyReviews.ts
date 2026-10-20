@@ -11,11 +11,11 @@ export const MY_REVIEWS_KEY = "my-reviews";
 const PHOTO_BUCKET = "review-photos";
 
 /** The signed-in person's own reviews, newest first. */
-export function useMyReviews() {
+export function useMyReviews(options: { enabled?: boolean } = {}) {
   const { session } = useAuth();
   return useQuery({
     queryKey: [MY_REVIEWS_KEY],
-    enabled: !!session,
+    enabled: !!session && (options.enabled ?? true),
     queryFn: async (): Promise<MyReview[]> => {
       const { data, error } = await supabase.rpc("my_reviews");
       if (error) throw error;

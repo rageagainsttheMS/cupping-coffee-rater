@@ -20,11 +20,13 @@ const review = (over: Partial<MyReview> = {}): MyReview => ({
   suburb: "Carlton",
   visit_date: "2026-10-18",
   created_at: new Date(2026, 9, 18, 9, 0).toISOString(),
+  edited_at: null,
   comment: "Silky, sweet, properly hot.",
   beans: "Single origin Ethiopian",
   verified: false,
   drinks: [{ drink_id: 1, name: "Magic", rating: 4.5, milk: null, price_aud: 5.8 }],
   ratings: { food: 4, vibe: 4.5, work: 5 },
+  tags: [],
   photo_path: "u/r1.jpg",
   photo_width: 10,
   photo_height: 10,
@@ -70,6 +72,14 @@ describe("MyReviewsView", () => {
     expect(screen.getByText("Carlton · 2 days ago")).toBeTruthy();
     expect(screen.getByText("Fitzroy · last week")).toBeTruthy();
     expect(screen.getByText("$5.80 · Single origin Ethiopian")).toBeTruthy();
+  });
+
+  it("marks an edited review", async () => {
+    await renderMyReviews({
+      reviews: [review({ edited_at: new Date(2026, 9, 19, 9, 0).toISOString() }), reviews[1]],
+    });
+    expect(screen.getByText("Carlton · 2 days ago · Edited")).toBeTruthy();
+    expect(screen.getByText("Fitzroy · last week")).toBeTruthy();
   });
 
   it("shows a dash for metrics that were not rated", async () => {

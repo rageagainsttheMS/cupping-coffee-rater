@@ -13,8 +13,17 @@ import { WizardScreen } from "@/features/review-wizard/WizardScreen";
 /** Step 3. The Coffee rating for the current drink, then its quick tags. Coffee is required. */
 export default function RateStep() {
   const { metrics } = useTheme();
-  const { values, drinks, tags, activeDrink, setCoffeeRating, toggleTag, addDrink, goNext } =
-    useWizard();
+  const {
+    values,
+    drinks,
+    tags,
+    activeDrink,
+    setCoffeeRating,
+    toggleTag,
+    addDrink,
+    goNext,
+    editing,
+  } = useWizard();
   const drinkName = drinks.find((d) => d.id === activeDrink.drinkId)?.name ?? "";
   const rated = activeDrink.rating !== null;
   const coffeeTags = activeTagsByMetric(tags).coffee;
@@ -74,7 +83,9 @@ export default function RateStep() {
               />
             ))}
           </View>
-          <Button label={copy.review.rate.another} variant="secondary" onPress={addDrink} />
+          {editing ? null : (
+            <Button label={copy.review.rate.another} variant="secondary" onPress={addDrink} />
+          )}
         </View>
       ) : null}
     </WizardScreen>
