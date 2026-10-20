@@ -94,7 +94,7 @@ function MetricCard({ metric }: CardProps) {
               setMetricRating(metric, null);
               setOpen(false);
             }}
-            style={{ alignSelf: "flex-start", paddingVertical: spacing.xs }}
+            style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}
           >
             <Text variant="label" color={m.onTint}>
               {copy.review.extras.didntTry}

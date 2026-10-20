@@ -93,6 +93,7 @@ export function PhotoViewer({ path, onClose }: { path: string | null; onClose: (
   return (
     <Modal visible={path !== null} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
+        accessibilityRole="button"
         accessibilityLabel={copy.cafe.closePhoto}
         onPress={onClose}
         style={{ flex: 1, backgroundColor: "#000", justifyContent: "center" }}

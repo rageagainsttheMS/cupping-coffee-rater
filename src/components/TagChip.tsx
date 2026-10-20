@@ -23,6 +23,8 @@ export function TagChip({ label, metric, selected, count, onPress }: Props) {
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityState={onPress ? { selected: !!selected } : undefined}
       disabled={!onPress}
+      // The chip is about 30 pt tall; this brings the touch target to 44 pt.
+      hitSlop={{ top: 7, bottom: 7 }}
       onPress={onPress}
       style={{
         paddingHorizontal: spacing.md,

@@ -50,6 +50,7 @@ export function WhatToOrder({ drinks, topBean, selectedDrinkId, onSelectDrink }:
                 flexDirection: "row",
                 alignItems: "center",
                 gap: spacing.md,
+                minHeight: 44,
                 paddingVertical: spacing.sm,
                 paddingHorizontal: spacing.md,
                 borderRadius: radius.md,

@@ -37,7 +37,7 @@ export function MetricSummary({ metric, reviewCount, tags }: Props) {
         <Pressable
           accessibilityRole="button"
           onPress={() => setExpanded((open) => !open)}
-          style={{ alignSelf: "flex-start", paddingVertical: spacing.xs }}
+          style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}
         >
           <Text variant="label" color={metrics[metric].onTint}>
             {expanded ? copy.cafe.showFewer : copy.cafe.showAll}
