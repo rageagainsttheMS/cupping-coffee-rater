@@ -15,6 +15,8 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ErrorFallback } from "@/components/ErrorFallback";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { AuthLinkHandler } from "@/features/auth/AuthLinkHandler";
 import { AuthProvider, useAuth } from "@/features/auth/AuthProvider";
 import { OnboardingProvider } from "@/features/auth/OnboardingProvider";
@@ -58,16 +60,20 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <OnboardingProvider>
-              <AuthProvider>
-                <AuthLinkHandler />
-                <BottomSheetModalProvider>
-                  <AppShell />
-                </BottomSheetModalProvider>
-              </AuthProvider>
-            </OnboardingProvider>
-          </QueryClientProvider>
+          <Sentry.ErrorBoundary
+            fallback={({ resetError }) => <ErrorFallback onRetry={resetError} />}
+          >
+            <QueryClientProvider client={queryClient}>
+              <OnboardingProvider>
+                <AuthProvider>
+                  <AuthLinkHandler />
+                  <BottomSheetModalProvider>
+                    <AppShell />
+                  </BottomSheetModalProvider>
+                </AuthProvider>
+              </OnboardingProvider>
+            </QueryClientProvider>
+          </Sentry.ErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -95,6 +101,7 @@ function AppShell() {
   return (
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <OfflineBanner />
       <MapFiltersProvider>
         <Stack
           screenOptions={{

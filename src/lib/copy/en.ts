@@ -331,6 +331,14 @@ export const copy = {
     },
   },
 
+  errorBoundary: {
+    title: "Something went wrong",
+    body: "The app hit a problem. We've been told about it. Try again, and if it keeps happening, restart the app.",
+    retry: "Try again",
+  },
+  offline: {
+    banner: "You're offline. Some things may not load.",
+  },
   map: {
     distanceMetres: (metres: number) => `${metres} m`,
     distanceKm: (km: string) => `${km} km`,
@@ -341,6 +349,9 @@ export const copy = {
     recentre: "Show my location",
     noCafes: "No cafes here yet",
     noCafesBody: "Move the map or search for a cafe.",
+    loadError: "We couldn't load cafes",
+    loadErrorBody: "Check your connection and try again.",
+    retry: "Try again",
     findingCafes: "Looking for cafes nearby",
     pinRated: (name: string, metricLabel: string, score: string) =>
       `${name}, ${metricLabel} ${score}`,

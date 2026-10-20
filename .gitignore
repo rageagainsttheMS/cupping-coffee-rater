@@ -45,3 +45,6 @@ example
 # local Supabase function secrets
 supabase/functions/.env
 supabase/.env
+
+# test coverage output
+coverage/

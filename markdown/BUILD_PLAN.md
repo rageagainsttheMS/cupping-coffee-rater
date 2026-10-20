@@ -772,29 +772,7 @@ Both stores require these for user-generated content. All are Phase 1.
 > `CONTACT_EMAIL` in `src/lib/links.ts`. **Hosted:** the pages are live on GitHub Pages from the public repo
 > `rageagainsttheMS/cupping-legal` (https://rageagainstthems.github.io/cupping-legal/), and `LEGAL_URLS` and
 > `ACCOUNT_DELETION_URL` point there, so the Terms, Privacy and Contact rows now work. To change a page, edit
-> `docs-site/` here, copy it into `site/` in that repo and push (see `decisions.md`). **Still to do:** have
-> the Privacy Policy and Terms read by someone qualified (plain-language drafts, not legal advice), and add
-> Sentry to the Privacy Policy in M10. Google Play needs the account deletion URL in the store listing (M12).
->
-> **Only a phone can confirm:** the "⋮" menu, the report sheet's look and keyboard behaviour, blocking
-> hiding reviews at once, Unblock, and deleting a real account (then signing up again).
-
-> **Before release: get the legal documents written properly.** The Privacy Policy, Terms of Use and
-> account deletion page in `docs-site/` are plain-language drafts that match what the app does today.
-> They are not legal advice, and the stores and the law expect more than a draft. Do one of these before
-> the first store submission (M12), and keep them accurate when the app changes:
->
-> - **Generator or template (cheapest).** A service such as Termly, iubenda or TermsFeed, or a template
->   from a similar app. Many early apps start here. Whatever you use must be edited to match exactly what
->   this app collects and does (reviews, photos, location checked and discarded, Supabase, Google, Apple,
->   Sentry once added), because a policy that doesn't match the app is worse than none.
-> - **Solicitor review or draft (best).** Typically a few hundred to a few thousand dollars. Worth it
->   once there is real traffic, user-generated content or any money involved, and Australia's Privacy Act
->   applies. Ask them to check the report, block and 24-hour moderation promises in the Terms too, since
->   the app has to keep them.
->
-> After either: replace the text in `docs-site/`, copy it to the `cupping-legal` repo (see
-> `decisions.md`), update the "Last updated" date, and tick the release checklist item in 12.5.
+> `docs-site/` here, copy it into `site/` in that repo and push (see `decisions.md`). 
 
 **Done when:** you can report and block from a review card, a hidden review vanishes from the app and scores, and deleting an account removes all its data and photos. **Met.** The legal documents are drafts until they are written properly (see the note above and 12.5).
 
@@ -875,6 +853,30 @@ Do these with a dev or `preview` build pointed at the hosted project (11.1 and 1
 ---
 
 ## M12 — Release prep and first EAS production build
+
+**Still to do:** have
+> the Privacy Policy and Terms read by someone qualified (plain-language drafts, not legal advice), and add
+> Sentry to the Privacy Policy in M10. Google Play needs the account deletion URL in the store listing (M12).
+>
+> **Only a phone can confirm:** the "⋮" menu, the report sheet's look and keyboard behaviour, blocking
+> hiding reviews at once, Unblock, and deleting a real account (then signing up again).
+
+> **Before release: get the legal documents written properly.** The Privacy Policy, Terms of Use and
+> account deletion page in `docs-site/` are plain-language drafts that match what the app does today.
+> They are not legal advice, and the stores and the law expect more than a draft. Do one of these before
+> the first store submission (M12), and keep them accurate when the app changes:
+>
+> - **Generator or template (cheapest).** A service such as Termly, iubenda or TermsFeed, or a template
+>   from a similar app. Many early apps start here. Whatever you use must be edited to match exactly what
+>   this app collects and does (reviews, photos, location checked and discarded, Supabase, Google, Apple,
+>   Sentry once added), because a policy that doesn't match the app is worse than none.
+> - **Solicitor review or draft (best).** Typically a few hundred to a few thousand dollars. Worth it
+>   once there is real traffic, user-generated content or any money involved, and Australia's Privacy Act
+>   applies. Ask them to check the report, block and 24-hour moderation promises in the Terms too, since
+>   the app has to keep them.
+>
+> After either: replace the text in `docs-site/`, copy it to the `cupping-legal` repo (see
+> `decisions.md`), update the "Last updated" date, and tick the release checklist item in 12.5.
 
 ### 12.1 App config
 

@@ -6,3 +6,5 @@ npm-lock.json
 supabase/.temp
 src/lib/database.types.ts
 *.md
+
+coverage/

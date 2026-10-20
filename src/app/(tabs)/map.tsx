@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { Button } from "@/components/Button";
 import { CircleButton } from "@/components/CircleButton";
 import { MetricChip } from "@/components/MetricChip";
 import { Screen } from "@/components/Screen";
@@ -261,6 +262,27 @@ export default function MapScreen() {
                 />
               )}
             />
+          ) : cafesQuery.isError ? (
+            <View
+              style={{
+                marginHorizontal: spacing.lg,
+                marginBottom: spacing.md,
+                padding: spacing.lg,
+                gap: spacing.sm,
+                borderRadius: radius.lg,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Text variant="heading">{copy.map.loadError}</Text>
+              <Text muted>{copy.map.loadErrorBody}</Text>
+              <Button
+                variant="secondary"
+                label={copy.map.retry}
+                onPress={() => void cafesQuery.refetch()}
+              />
+            </View>
           ) : (
             <View
               style={{
