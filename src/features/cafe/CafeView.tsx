@@ -14,7 +14,7 @@ import { PhotoGrid, PhotoViewer } from "./Photos";
 import { ReviewCard } from "./ReviewCard";
 import { WhatToOrder } from "./WhatToOrder";
 import { openStatus } from "./format";
-import type { CafeDetail, CafePhoto, ReviewsResult } from "./types";
+import type { CafeDetail, CafePhoto, CafeReview, ReviewsResult } from "./types";
 
 type Props = {
   detail: CafeDetail;
@@ -31,6 +31,10 @@ type Props = {
   onToggleSave: () => void;
   onDirections: () => void;
   onRate: () => void;
+  /** The signed-in person, so their own reviews get no report or block menu. */
+  currentUserId?: string;
+  /** Opens the report and block menu for someone else's review. */
+  onReviewMenu?: (review: CafeReview) => void;
 };
 
 /** The cafe page: everything from the header to the sticky footer, once the data is in hand. */
@@ -45,6 +49,8 @@ export function CafeView({
   onToggleSave,
   onDirections,
   onRate,
+  currentUserId,
+  onReviewMenu,
 }: Props) {
   const { colors } = useTheme();
   const [metric, setMetric] = useState<Metric>(initialMetric);
@@ -134,7 +140,15 @@ export function CafeView({
         }
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         renderItem={({ item }) => (
-          <ReviewCard review={item} metric={metric} drinkId={drinkId} onOpenPhoto={setViewing} />
+          <ReviewCard
+            review={item}
+            metric={metric}
+            drinkId={drinkId}
+            onOpenPhoto={setViewing}
+            onMenu={
+              onReviewMenu && item.user_id !== currentUserId ? () => onReviewMenu(item) : undefined
+            }
+          />
         )}
         onEndReached={() => {
           if (reviews.hasNextPage && !reviews.isFetchingNextPage) reviews.fetchNextPage();

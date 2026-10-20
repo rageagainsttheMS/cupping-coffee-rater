@@ -7,7 +7,7 @@ import { Text } from "./Text";
 type Props = Omit<PressableProps, "children"> & {
   label: string;
   /** `dark` is the near-black button used for the main action on onboarding screens. */
-  variant?: "primary" | "dark" | "secondary";
+  variant?: "primary" | "dark" | "secondary" | "danger";
   /** Shows a spinner and ignores presses, e.g. while a request is running. */
   busy?: boolean;
 };
@@ -16,9 +16,19 @@ export function Button({ label, variant = "primary", busy, disabled, style, ...r
   const { colors } = useTheme();
   const inactive = disabled || busy;
   const background =
-    variant === "primary" ? colors.primary : variant === "dark" ? colors.text : "transparent";
+    variant === "primary"
+      ? colors.primary
+      : variant === "dark"
+        ? colors.text
+        : variant === "danger"
+          ? colors.danger
+          : "transparent";
   const foreground =
-    variant === "primary" ? colors.onPrimary : variant === "dark" ? colors.background : colors.text;
+    variant === "primary" || variant === "danger"
+      ? colors.onPrimary
+      : variant === "dark"
+        ? colors.background
+        : colors.text;
   return (
     <Pressable
       accessibilityRole="button"

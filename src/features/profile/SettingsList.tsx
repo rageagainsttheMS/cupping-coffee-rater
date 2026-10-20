@@ -51,10 +51,12 @@ type RowProps = {
   label: string;
   /** Shown on the right, before the chevron, e.g. a count or "While using". */
   value?: string;
+  /** `danger` colours the row for an action that can't be undone. */
+  tone?: "danger";
   onPress: () => void;
 };
 
-export function SettingsRow({ icon, label, value, onPress }: RowProps) {
+export function SettingsRow({ icon, label, value, tone, onPress }: RowProps) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -69,8 +71,16 @@ export function SettingsRow({ icon, label, value, onPress }: RowProps) {
         paddingVertical: spacing.md,
       }}
     >
-      <MaterialCommunityIcons name={icon} size={22} color={colors.textMuted} />
-      <Text variant="bodyStrong" style={{ flex: 1 }}>
+      <MaterialCommunityIcons
+        name={icon}
+        size={22}
+        color={tone === "danger" ? colors.danger : colors.textMuted}
+      />
+      <Text
+        variant="bodyStrong"
+        color={tone === "danger" ? colors.danger : undefined}
+        style={{ flex: 1 }}
+      >
         {label}
       </Text>
       {value ? (

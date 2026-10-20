@@ -629,7 +629,7 @@ Coffee is required to continue; "Didn't try" sends null; the comment counter blo
 - Rows: photo, name, suburb · distance, four coloured score dots, heart to unsave (with undo snackbar). For cafes the user has reviewed, show "Your last rating: Long black 4.0".
 - Empty state that points to the map.
 
-> **Status of 8.1: built, not yet checked on a phone.** Lint, types and Jest tests pass.
+> **Status of 8.1: complete. Checked on a phone.** Lint, types and Jest tests pass.
 > The route `app/(tabs)/saved.tsx` wires `useSavedCafes` (the `my_saved_cafes()` function, key
 > `saved-cafes`) and `useSetSaved`; `features/saved/SavedView.tsx` draws everything from props.
 > Distance and undo-placement logic is in `features/saved/filters.ts` (tested). Unsaving removes the row
@@ -661,7 +661,7 @@ Designs: Profile and My reviews, in the Product Design doc (added 20 Oct 2026).
 - `my_reviews()` is migration `20261020100000`, with `supabase/tests/11_my_reviews.test.sql` (own reviews only, hidden ones excluded, newest first, drinks, ratings and photo, anon refused).
 - Empty state ("Rate a cafe"), loading, and error with retry.
 
-> **Status of 8.2 and 8.3: built, not yet checked on a phone.** Lint, types, formatting, 345 Jest tests and
+> **Status of 8.2 and 8.3: complete. Checked on a phone.** Lint, types, formatting, 345 Jest tests and
 > 167 pgTAP tests pass. `database.types.ts` was regenerated. The screens draw from props
 > (`features/profile/ProfileView.tsx`, `MyReviewsView.tsx`, `MyReviewCard.tsx`); the routes only wire data.
 > Pure logic is in `features/profile/myReviews.ts` (ordering, counts, "2 days ago", price line) and
@@ -684,7 +684,7 @@ No design image yet: it reuses the review wizard screens, so the existing design
 - **App:** **Edit review** in the My reviews three-dot menu opens `/review?editId=…`. The wizard loads the review into the form (not a draft; leave the draft alone), skips the cafe, drink and details steps, and goes rate → extras → comment, with the last button "Save changes". Close asks before discarding changes. On save it invalidates My reviews, the cafe, map and saved queries and returns to My reviews, where the "Edited" label is the confirmation. A save with nothing changed just closes, so a review is not marked Edited for no reason. Errors in plain language, as for posting.
 - **Jest 🧪:** the form loads from a review; the skipped steps; "Save changes" sends only the editable fields; the "Edited" label shows only when `edited_at` is set; clearing a metric drops its tags.
 
-> **Status of 8.4: built, not yet checked on a phone.** Lint, types, formatting, 366 Jest tests and 190 pgTAP
+> **Status of 8.4: complete. Checked on a phone.** Lint, types, formatting, 366 Jest tests and 190 pgTAP
 > tests pass. **Database:** migration `20261020110000` adds `reviews.edited_at`, recreates `cafe_reviews` and
 > `my_reviews` (both now return `edited_at`; `my_reviews` also returns the tags), and adds
 > `update_review(review_id, drinks, food, vibe, work, tags, comment)`, with
@@ -701,7 +701,7 @@ No design image yet: it reuses the review wizard screens, so the existing design
 > is when posting. **Only a phone can confirm:** the whole edit flow on a device, with a two-drink review, and
 > the Edited label appearing on the cafe page.
 
-**Done when:** saving from the map card or cafe page shows up in Saved, and every Profile row works (M9 rows are added in M9).
+**Done when:** saving from the map card or cafe page shows up in Saved, and every Profile row works (M9 rows are added in M9). **Met.**
 
 ---
 
@@ -741,6 +741,43 @@ Both stores require these for user-generated content. All are Phase 1.
 - Write a Privacy Policy, Terms of Use (forbidding objectionable content and stating that reports are acted on), and an **account deletion page** explaining how to delete in-app and by email (Google Play requires a web URL for this).
 - Host them as static pages (e.g. GitHub Pages from a `docs-site/` folder or a separate public repo).
 - Link them from Create account, Profile, and later the store listings. Publish a contact email.
+
+> **Status of M9: built, not yet checked on a phone.** Lint, types, formatting,
+> 387 Jest tests and 213 pgTAP tests pass. No design existed for these screens, so they were built from
+> the text above in the existing styling (chosen 21 Oct 2026); the design doc describes them in words only.
+>
+> **9.1 Report.** On someone else's review the cafe page shows a "⋮" button (`ReviewCard`, wired through
+> `CafeView` and `useReviewSafety`). It opens an alert with Report review and Block [name]. Report opens a
+> bottom sheet (`features/safety/ReportSheet.tsx`): Spam, Offensive, Fake or Other, plus optional details
+> (500 characters, enforced by migration `20261021100000`). A second report of the same review says
+> "You've already reported this review." The insert asks for no row back, since reporters cannot read reports.
+>
+> **9.2 Moderation.** The process is `markdown/moderation.md` (in `markdown/`, not `docs/`, to follow
+> CLAUDE.md): daily check of `review_reports`, hide with `hidden_at`, ban in the Auth admin view, target
+> 24 hours. The optional email alert on a new report was not built.
+>
+> **9.3 Block.** The same menu asks "Block [name]?" and writes `user_blocks`; the person's reviews and
+> photos disappear at once. Profile, Account and password, **Blocked users** lists them with Unblock.
+>
+> **9.4 Delete account.** Profile, Account and password, **Delete account** explains what goes and needs
+> "DELETE" typed. The `delete-account` Edge Function (JWT checked in the function, like the Places ones)
+> deletes the person's photos from Storage, then the auth user; the database cascades the profile,
+> reviews and their child rows, saved cafes, blocks and reports (proved by pgTAP). The person to delete
+> is always the one the token belongs to. The app then signs out and clears AsyncStorage. The function was
+> also checked end to end against the local stack: refusals leave the user alone, and a valid request left
+> nothing in any table or the bucket.
+>
+> **9.5 Legal pages.** Static pages are in `docs-site/` (Privacy Policy, Terms of Use, account deletion page,
+> index). The contact email (williamawrigley@gmail.com, set 21 Oct 2026) is on all four pages and is
+> `CONTACT_EMAIL` in `src/lib/links.ts`. **Hosted:** the pages are live on GitHub Pages from the public repo
+> `rageagainsttheMS/cupping-legal` (https://rageagainstthems.github.io/cupping-legal/), and `LEGAL_URLS` and
+> `ACCOUNT_DELETION_URL` point there, so the Terms, Privacy and Contact rows now work. To change a page, edit
+> `docs-site/` here, copy it into `site/` in that repo and push (see `decisions.md`). **Still to do:** have
+> the Privacy Policy and Terms read by someone qualified (plain-language drafts, not legal advice), and add
+> Sentry to the Privacy Policy in M10. Google Play needs the account deletion URL in the store listing (M12).
+>
+> **Only a phone can confirm:** the "⋮" menu, the report sheet's look and keyboard behaviour, blocking
+> hiding reviews at once, Unblock, and deleting a real account (then signing up again).
 
 **Done when:** you can report and block from a review card, a hidden review vanishes from the app and scores, and deleting an account removes all its data and photos.
 
@@ -992,8 +1029,8 @@ reviewers ask for more.
 - [ ] M5 map with metric tabs, clustered score pins, "Rate first" dots, swipeable card, search
 - [x] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
 - [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
-- [ ] M8 Saved tab and Profile
-- [ ] M9 report, block, delete account, legal pages, moderation process
+- [x] M8 Saved tab and Profile
+- [ ] M9 report, block, delete account, legal pages, moderation process (built and hosted; pending phone check)
 - [ ] M10 states, Sentry, accessibility, performance and outdoor tests
 - [ ] M11 hosted backend, launch cafes, deploy and release workflows
 - [ ] M12 app config, assets, credentials, first EAS production build

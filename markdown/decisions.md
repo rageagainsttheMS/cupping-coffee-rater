@@ -63,6 +63,18 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 
 **Decided 20 Oct 2026: allowed, with limits.** Ratings (each drink's, Food, Vibe, Work), tags and the comment can be edited. The cafe, visit date, drinks, milk, price, beans and photo cannot, because the cafe and date drive the verified badge and the one-review-per-day rule, and a different drink would mean a different review. **No time limit**: people should be able to fix a rating later. Edited reviews show an "Edited" label so readers can tell, using a new `reviews.edited_at` column. The flow reuses the review wizard, pre-filled and without the cafe, drink and details steps. Risk to watch after beta: someone could raise ratings on old reviews; scores still use the original visit date for recency. Planned as M8.4.
 
+### Reports, blocks and account deletion (built 21 Oct 2026)
+
+**Decided.** A review's "⋮" menu offers Report and Block only on other people's reviews. Reports are one per person per review, up to 500 characters of details, and cannot be read back by anyone in the app; they are reviewed in Supabase Studio (see `moderation.md`). Blocking is one-way: the blocker stops seeing the blocked person's reviews and photos, and the blocked person is not told. **Account deletion goes through an Edge Function** that removes the Storage photos first and the auth user second, because deleting a user row does not delete files; the database cascade removes everything else. The person must type DELETE, and the function takes the user from the token, never from the request. Chosen over a database function alone, which cannot remove files from Storage.
+
+### Legal pages and contact
+
+**Open until published.** Draft Privacy Policy, Terms of Use and account deletion pages are in `docs-site/`, written in plain language for Australia. The contact email is williamawrigley@gmail.com (set 21 Oct 2026) on every page and as `CONTACT_EMAIL` in `src/lib/links.ts`; a dedicated address for the app would be better before launch. The pages are hosted (see Legal links) and still need a legal read-through before the store submissions (M11/M12). The Privacy Policy says exactly what the app does today (location is checked and discarded, nothing is stored); revisit it when Sentry is added.
+
+### One row per drink in a review
+
+**Decided 21 Oct 2026.** `review_drinks` is unique on (review, drink). The wizard already refused a repeat, but the database did not, so the random seed data produced reviews with the same drink twice, which broke list keys on the cafe page and would break editing. The migration collapses any existing repeats, and the seed now picks a different second drink.
+
 ### Single or combined metric tabs
 
 **Decided: single-select.** Matches the chosen map screen. Combined tabs ("show the lower score") are Phase 2.
@@ -125,7 +137,7 @@ Fixed by computing the weights in double precision and reading scores once. Afte
 
 ### Legal links
 
-**Open until M9.5.** The Terms of Use and Privacy Policy links on the sign-up and terms screens do nothing yet. `LEGAL_URLS` in `src/lib/links.ts` is empty until the pages are hosted.
+**Decided 21 Oct 2026: hosted on GitHub Pages from a separate public repo.** The main repo is private, and Pages is free only for public repos, so the pages live in `rageagainsttheMS/cupping-legal` (only the legal pages, no app code), published by its own workflow. Live at https://rageagainstthems.github.io/cupping-legal/ (`privacy.html`, `terms.html`, `delete-account.html`). `LEGAL_URLS` and `ACCOUNT_DELETION_URL` in `src/lib/links.ts` point there, so the Terms and Privacy links on Create account and the Help screen work. **The source of truth is `docs-site/` here.** To change a page, edit it in `docs-site/`, copy the files into `site/` in the `cupping-legal` repo, and push to its `main`; the workflow republishes. Use the Google Play account-deletion URL above in the store listing. A custom domain can replace this later; the stores only need a stable address.
 
 ### Location step: no suburb list
 

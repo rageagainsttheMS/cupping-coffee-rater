@@ -7,6 +7,7 @@ import { CircleButton } from "@/components/CircleButton";
 import { Screen } from "@/components/Screen";
 import { Text } from "@/components/Text";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { SettingsGroup, SettingsRow } from "@/features/profile/SettingsList";
 import { authErrorMessage } from "@/features/auth/authErrors";
 import { copy } from "@/lib/copy/en";
 import { supabase } from "@/lib/supabase";
@@ -69,6 +70,20 @@ export default function AccountScreen() {
             </Text>
           ) : null}
         </View>
+
+        <SettingsGroup>
+          <SettingsRow
+            icon="account-cancel-outline"
+            label={text.blockedUsers}
+            onPress={() => router.push("/blocked-users")}
+          />
+          <SettingsRow
+            icon="delete-outline"
+            label={text.deleteAccount}
+            tone="danger"
+            onPress={() => router.push("/delete-account")}
+          />
+        </SettingsGroup>
       </View>
     </Screen>
   );

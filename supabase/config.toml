@@ -433,3 +433,6 @@ verify_jwt = false
 
 [functions.places-details]
 verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false

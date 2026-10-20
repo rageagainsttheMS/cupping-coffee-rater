@@ -50,11 +50,19 @@ on conflict (user_id, cafe_id, visit_date) do nothing;
 -- One or two drinks per review, mostly coffee, occasionally chai, matcha or hot chocolate.
 insert into public.review_drinks (review_id, drink_id, rating, milk, price_aud)
 select r.id,
-       case when random() < 0.08 then 19 + floor(random() * 3)::int else 1 + floor(random() * 18)::int end,
+       -- The second drink is always a different one: it is a coffee (1 to 18) offset from the first.
+       case when n = 1 then f.first_drink
+            else 1 + ((f.first_drink + floor(random() * 17)::int) % 18) end,
        least(5, greatest(1, round((3.9 + (random() + random() + random() - 1.5)) * 2) / 2)),
        case when random() < 0.7 then (enum_range(null::public.milk_type))[1 + floor(random() * 6)::int] end,
        round((4 + random() * 2.5)::numeric, 1)
 from public.reviews r
+cross join lateral (
+  select case when random() < 0.08 then 19 + floor(random() * 3)::int
+              else 1 + floor(random() * 18)::int end as first_drink
+  -- Referring to the review makes this run once per review, not once for the whole query.
+  where r.id is not null
+) f
 cross join lateral generate_series(1, 1 + (random() < 0.3 and r.id is not null)::int) n;
 
 -- Food, vibe and work ratings, with some "did not try" (null) rows.

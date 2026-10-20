@@ -100,6 +100,8 @@ function AppShell() {
             <Stack.Screen name="my-reviews" />
             <Stack.Screen name="appearance" />
             <Stack.Screen name="account" />
+            <Stack.Screen name="blocked-users" />
+            <Stack.Screen name="delete-account" />
             <Stack.Screen name="help" />
             <Stack.Screen name="review" options={{ presentation: "fullScreenModal" }} />
           </Stack.Protected>

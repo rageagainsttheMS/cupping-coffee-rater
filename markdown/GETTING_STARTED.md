@@ -147,7 +147,7 @@ src/
   lib/                supabase client, query hooks, theme tokens
 supabase/
   migrations/
-  functions/          places-search, places-details
+  functions/          places-search, places-details, delete-account
   tests/              pgTAP tests
   seed.sql
 .github/workflows/

@@ -17,6 +17,8 @@ type Props = {
   metric: Metric;
   drinkId: number | null;
   onOpenPhoto: (path: string) => void;
+  /** Opens the report and block menu. Left out for the person's own reviews. */
+  onMenu?: () => void;
 };
 
 function drinkLine(drink: ReviewDrink): string {
@@ -30,7 +32,7 @@ function drinkLine(drink: ReviewDrink): string {
 }
 
 /** One review: who, what they drank, the selected metric's rating, the others, and their words. */
-export function ReviewCard({ review, metric, drinkId, onOpenPhoto }: Props) {
+export function ReviewCard({ review, metric, drinkId, onOpenPhoto, onMenu }: Props) {
   const { colors, metrics } = useTheme();
   const main = reviewMetricRating(review, metric, drinkId);
   const others = otherRatings(review, metric, METRICS);
@@ -57,8 +59,8 @@ export function ReviewCard({ review, metric, drinkId, onOpenPhoto }: Props) {
               {copy.cafe.reviews.edited}
             </Text>
           ) : null}
-          {review.drinks.map((drink) => (
-            <Text key={drink.drink_id} variant="caption" muted>
+          {review.drinks.map((drink, index) => (
+            <Text key={`${drink.drink_id}-${index}`} variant="caption" muted>
               {drinkLine(drink)}
             </Text>
           ))}
@@ -80,6 +82,24 @@ export function ReviewCard({ review, metric, drinkId, onOpenPhoto }: Props) {
               {main.toFixed(1)}
             </Text>
           </View>
+        ) : null}
+        {onMenu ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.safety.menu(review.author_name)}
+            onPress={onMenu}
+            hitSlop={8}
+            style={{
+              width: 44,
+              height: 44,
+              marginVertical: -spacing.sm,
+              marginRight: -spacing.sm,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <MaterialCommunityIcons name="dots-vertical" size={22} color={colors.textMuted} />
+          </Pressable>
         ) : null}
       </View>
 

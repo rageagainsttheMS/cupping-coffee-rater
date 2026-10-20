@@ -13,6 +13,7 @@ import { CafeCard } from "@/features/map/CafeCard";
 import { formatDistance, sortForCards } from "@/features/map/cards";
 import { buildClusterIndex, clusterExpansionZoom, getMapItems } from "@/features/map/clusters";
 import type { MapItem } from "@/features/map/clusters";
+import { moveWhenReady } from "@/features/map/focusMove";
 import { distanceMetres, regionAtZoom, regionToBbox, regionToZoom } from "@/features/map/geo";
 import { MapPin } from "@/features/map/MapPin";
 import { useMapFilters } from "@/features/map/MapFiltersContext";
@@ -127,7 +128,10 @@ export default function MapScreen() {
   // the search screen, and moving a map that is hidden does nothing.
   useFocusEffect(
     useCallback(() => {
-      if (focusRequest) mapRef.current?.animateToRegion(regionAtZoom(focusRequest, 16), 400);
+      if (!focusRequest) return;
+      return moveWhenReady(() =>
+        mapRef.current?.animateToRegion(regionAtZoom(focusRequest, 16), 400),
+      );
     }, [focusRequest]),
   );
 

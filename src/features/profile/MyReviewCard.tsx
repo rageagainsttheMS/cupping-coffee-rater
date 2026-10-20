@@ -101,9 +101,9 @@ export function MyReviewCard({ review, now, onOpenCafe, onOpenMenu }: Props) {
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <View style={{ flex: 1, gap: spacing.sm }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-            {review.drinks.map((drink) => (
+            {review.drinks.map((drink, index) => (
               <View
-                key={drink.drink_id}
+                key={`${drink.drink_id}-${index}`}
                 style={{
                   paddingHorizontal: spacing.md,
                   paddingVertical: spacing.xs,

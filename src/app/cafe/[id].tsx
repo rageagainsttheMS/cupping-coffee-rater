@@ -9,6 +9,8 @@ import { useCafeDetail } from "@/features/cafe/useCafeDetail";
 import { useCafeReviews } from "@/features/cafe/useCafeReviews";
 import { useCafePhotos } from "@/features/cafe/usePhotos";
 import { useSaveCafe } from "@/features/cafe/useSaveCafe";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { useReviewSafety } from "@/features/safety/useReviewSafety";
 import { formatDistance } from "@/features/map/cards";
 import { distanceMetres } from "@/features/map/geo";
 import { useMapFilters } from "@/features/map/MapFiltersContext";
@@ -25,6 +27,8 @@ export default function CafeScreen() {
   const google = usePlaceDetails(id);
   const photos = useCafePhotos(id);
   const save = useSaveCafe(id, () => Alert.alert(copy.cafe.saveFailed));
+  const { session } = useAuth();
+  const safety = useReviewSafety();
 
   if (detail.isLoading) {
     return (
@@ -67,7 +71,10 @@ export default function CafeScreen() {
           void Linking.openURL(directionsUrl(cafe.cafe, google.data?.maps_uri, Platform.OS))
         }
         onRate={() => router.push({ pathname: "/review", params: { cafeId: cafe.cafe.id } })}
+        currentUserId={session?.user.id}
+        onReviewMenu={safety.openMenu}
       />
+      {safety.sheet}
     </Screen>
   );
 }
