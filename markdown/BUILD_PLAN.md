@@ -59,7 +59,7 @@ the answers in a `docs/decisions.md` file (one short entry per decision).
 | Prior weight toward the city average (`k`)       | M2 scoring         | `k = 5` ratings. Easy to tune later because it lives in one SQL function                                                                                                                                           |
 | Recency half-life                                | M2 scoring         | 12 months. 6 months punishes cafes too fast while ratings are sparse                                                                                                                                               |
 | Which score is displayed vs ranked               | M2, M5             | Display and rank the same Bayesian, recency-weighted score, so pins and order never disagree. Counts shown are raw counts                                                                                          |
-| Verified-visit radius                            | M2 `submit_review` | 100 m, stored as a constant so outdoor testing (M10) can change it                                                                                                                                                 |
+| Verified-visit radius                            | M2 `submit_review` | 100 m, stored as a constant so outdoor testing (M11.5) can change it                                                                                                                                                 |
 | Google rating fallback: field and cache duration | M3                 | `rating` and `userRatingCount` from Place Details, fetched live and **not stored** (terms only allow caching lat/lng for 30 days and place IDs). Shown on the cafe page only. See decisions.md                                                             |
 | Can cafe coordinates be stored?                  | M2 `cafes` table   | SDD plan: place ID permanently, coordinates with `refreshed_at` and a refresh job (M11). Confirm against current terms                                                                                             |
 | Minimum-star filter on the map                   | M5                 | Leave out of Phase 1 (it isn't in the chosen Phase 1 screens). Low-scoring pins fade instead. Revisit after beta                                                                                                   |
@@ -819,16 +819,11 @@ Labels on icon buttons, pins and score tiles ("Coffee 4.6 from 42 ratings"); `St
 - Load `seed-perf.sql` (~500 cafes) and test on a mid-range Android phone: map pans stay smooth, `cafes_in_view` returns in < 200 ms (check `explain analyze`).
 - If pins stutter: reduce marker complexity, tighten clustering radius, or cap results. Only add a materialised view for scores if the query is measurably slow, and record the measurement.
 
-### 10.5 Field tests
-
-- Verified-visit radius outdoors at several CBD cafes. Adjust the radius constant if 100 m fails, and record it in `docs/decisions.md`.
-- Walk the main journeys end to end in light and dark mode: onboarding → sign-up → map → cafe → review → saved → profile → delete account.
-
-### 10.6 Test coverage
+### 10.5 Test coverage
 
 Run `npx jest --coverage` and aim for ≥ 90% on `src/domain/` and the wizard's draft logic. No target for screens.
 
-**Done when:** the manual journey checklist passes on the phone with no crashes in Sentry, and the performance check is recorded.
+**Done when:** every screen has loading, empty and error states, Sentry reports a test error from a dev build, the accessibility checks pass, the performance check is recorded and the coverage target is met. The outdoor field tests moved to M11.5, because they need the hosted backend: a phone on mobile data can't reach the local database on your laptop.
 
 ---
 
@@ -859,7 +854,16 @@ From GETTING_STARTED §8 "Add later":
 
 Move the hosted project to **Supabase Pro** before any beta users (free projects pause after a week of inactivity). Keep the spend cap on.
 
-**Done when:** a dev build pointed at the hosted project (via EAS `preview` environment variables) shows real launch-suburb cafes and a full review round-trip works against production data.
+### 11.5 Field tests (moved from M10.5)
+
+Do these with a dev or `preview` build pointed at the hosted project (11.1 and 11.2 done), on mobile data, so the phone doesn't depend on your laptop.
+
+- **Verified-visit radius.** Post reviews outdoors at several CBD cafes, standing outside, at the counter and at a table. Adjust the radius constant if 100 m fails, and record it in `markdown/decisions.md`.
+- **Full journeys, in light and dark mode.** Walk onboarding → sign-up → map → cafe → review → saved → profile → delete account. Use a throwaway account on the hosted project and delete it at the end.
+- **No crashes in Sentry** (from M10.2) during the walk, and nothing unexpected in the Supabase logs.
+- Record what you found, and fix or log anything that fails before 12.5.
+
+**Done when:** a dev build pointed at the hosted project (via EAS `preview` environment variables) shows real launch-suburb cafes, a full review round-trip works against production data, and the field tests in 11.5 pass.
 
 ---
 
@@ -909,7 +913,7 @@ Check `eas.json`: `production` builds an Android **app bundle** and an iOS store
 - [ ] Privacy Policy, Terms and account-deletion URLs are live
 - [ ] Privacy Policy and Terms have been written or reviewed properly (generator/template edited to match the app, or a solicitor), not just the M9 drafts
 - [ ] Google attribution shown wherever Google data appears (Google rating, cafe names from Places)
-- [ ] A `preview` APK against the hosted project passes the M10 journey checklist on the phone
+- [ ] A `preview` APK against the hosted project passes the M11.5 field tests (journey checklist) on the phone
 
 ### 12.6 First production build
 
@@ -1082,6 +1086,6 @@ more work than it saves.
 - [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [x] M8 Saved tab and Profile
 - [x] M9 report, block, delete account, legal pages, moderation process
-- [ ] M10 states, Sentry, accessibility, performance and outdoor tests
-- [ ] M11 hosted backend, launch cafes, deploy and release workflows
+- [ ] M10 states, Sentry, accessibility, performance and coverage
+- [ ] M11 hosted backend, launch cafes, deploy and release workflows, field tests
 - [ ] M12 app config, assets, credentials, first EAS production build

@@ -18,7 +18,7 @@ One short entry per decision. Source: BUILD_PLAN.md, M0. Status is **Decided** u
 
 ### Verified-visit radius
 
-**Decided: 100 m.** Stored as the constant `verified_radius_m()` so outdoor testing (M10) can change it. Record any change here.
+**Decided: 100 m.** Stored as the constant `verified_radius_m()` so outdoor testing (M11.5) can change it. Record any change here.
 
 ## Google Maps Platform
 
