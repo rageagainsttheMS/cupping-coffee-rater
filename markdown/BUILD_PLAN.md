@@ -810,6 +810,13 @@ Every screen has loading (skeletons), empty and error states with retry. Offline
 
 `npx expo install @sentry/react-native`, add the config plugin, set `SENTRY_AUTH_TOKEN` as an EAS secret for source map upload, init with the DSN from an `EXPO_PUBLIC_` variable, and tag the environment (`development` / `preview` / `production`). Don't send PII.
 
+> **10.2 Sentry. Set up.** `@sentry/react-native` is installed with the config plugin, `metro.config.js` and
+> `Sentry.init` + `Sentry.wrap` in `src/app/_layout.tsx` (errors and tracing, `sendDefaultPii: false`, no Session
+> Replay). Sentry project `cupping` in org `williamw`. `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APP_ENV` are
+> EAS variables for `preview` and `production`, `SENTRY_AUTH_TOKEN` is an EAS secret, and the DSN is in
+> `.env.local` for development. **Still to do:** rebuild the dev client, confirm a test error reaches Sentry
+> (needed for M10's "Done when"), and add Sentry to the Privacy Policy.
+
 ### 10.3 Accessibility
 
 Labels on icon buttons, pins and score tiles ("Coffee 4.6 from 42 ratings"); `StarInput` exposed as an adjustable control; touch targets ≥ 44 pt; text scaling up to 1.3× without clipping; check contrast of metric colours on tints in both themes.

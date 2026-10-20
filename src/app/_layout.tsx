@@ -7,6 +7,7 @@ import {
 } from "@expo-google-fonts/manrope";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
+import * as Sentry from "@sentry/react-native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -23,10 +24,22 @@ import { useStage } from "@/features/auth/useStage";
 import { queryClient, subscribeQueryManagers } from "@/lib/query";
 import { ThemeProvider, useTheme } from "@/lib/theme/ThemeProvider";
 
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  // `development` / `preview` / `production`; EAS builds can set EXPO_PUBLIC_APP_ENV.
+  environment: process.env.EXPO_PUBLIC_APP_ENV ?? (__DEV__ ? "development" : "production"),
+  // The app collects user content and location, so keep IP addresses and other PII out of events.
+  sendDefaultPii: false,
+  // Lower this in production once there is real traffic.
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  // Don't report from local development unless a DSN is set.
+  enabled: !!process.env.EXPO_PUBLIC_SENTRY_DSN,
+});
+
 // Hold the splash screen until the fonts and the saved session are ready.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_600SemiBold,
     Fraunces_700Bold,
@@ -60,6 +73,8 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 /**
  * Chooses which screens exist for the person's current stage (see `resolveStage`). A screen outside

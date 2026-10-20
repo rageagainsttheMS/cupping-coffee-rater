@@ -58,6 +58,8 @@ const config: ExpoConfig = {
     "expo-image",
     "expo-secure-store",
     "expo-apple-authentication",
+    // Crash reporting. Source maps upload during EAS builds when SENTRY_AUTH_TOKEN is set.
+    ["@sentry/react-native/expo", { organization: "williamw", project: "cupping" }],
     // Google sign-in. The plugin only adds the iOS URL scheme (Android needs nothing from it) and
     // throws without one, so it is included once GOOGLE_IOS_URL_SCHEME is set for iOS builds.
     ...(process.env.GOOGLE_IOS_URL_SCHEME
