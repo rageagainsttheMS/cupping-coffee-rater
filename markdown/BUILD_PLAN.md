@@ -742,7 +742,7 @@ Both stores require these for user-generated content. All are Phase 1.
 - Host them as static pages (e.g. GitHub Pages from a `docs-site/` folder or a separate public repo).
 - Link them from Create account, Profile, and later the store listings. Publish a contact email.
 
-> **Status of M9: built, not yet checked on a phone.** Lint, types, formatting,
+> **Status of M9: complete. Checked on a phone.** Lint, types, formatting,
 > 387 Jest tests and 213 pgTAP tests pass. No design existed for these screens, so they were built from
 > the text above in the existing styling (chosen 21 Oct 2026); the design doc describes them in words only.
 >
@@ -779,7 +779,24 @@ Both stores require these for user-generated content. All are Phase 1.
 > **Only a phone can confirm:** the "⋮" menu, the report sheet's look and keyboard behaviour, blocking
 > hiding reviews at once, Unblock, and deleting a real account (then signing up again).
 
-**Done when:** you can report and block from a review card, a hidden review vanishes from the app and scores, and deleting an account removes all its data and photos.
+> **Before release: get the legal documents written properly.** The Privacy Policy, Terms of Use and
+> account deletion page in `docs-site/` are plain-language drafts that match what the app does today.
+> They are not legal advice, and the stores and the law expect more than a draft. Do one of these before
+> the first store submission (M12), and keep them accurate when the app changes:
+>
+> - **Generator or template (cheapest).** A service such as Termly, iubenda or TermsFeed, or a template
+>   from a similar app. Many early apps start here. Whatever you use must be edited to match exactly what
+>   this app collects and does (reviews, photos, location checked and discarded, Supabase, Google, Apple,
+>   Sentry once added), because a policy that doesn't match the app is worse than none.
+> - **Solicitor review or draft (best).** Typically a few hundred to a few thousand dollars. Worth it
+>   once there is real traffic, user-generated content or any money involved, and Australia's Privacy Act
+>   applies. Ask them to check the report, block and 24-hour moderation promises in the Terms too, since
+>   the app has to keep them.
+>
+> After either: replace the text in `docs-site/`, copy it to the `cupping-legal` repo (see
+> `decisions.md`), update the "Last updated" date, and tick the release checklist item in 12.5.
+
+**Done when:** you can report and block from a review card, a hidden review vanishes from the app and scores, and deleting an account removes all its data and photos. **Met.** The legal documents are drafts until they are written properly (see the note above and 12.5).
 
 ---
 
@@ -890,6 +907,7 @@ Check `eas.json`: `production` builds an Android **app bundle** and an iOS store
 - [ ] No `localhost`/LAN URLs, service-role key or Places key anywhere in the app bundle (`git grep` for them)
 - [ ] Hosted Supabase has every migration and function; Pro plan on
 - [ ] Privacy Policy, Terms and account-deletion URLs are live
+- [ ] Privacy Policy and Terms have been written or reviewed properly (generator/template edited to match the app, or a solicitor), not just the M9 drafts
 - [ ] Google attribution shown wherever Google data appears (Google rating, cafe names from Places)
 - [ ] A `preview` APK against the hosted project passes the M10 journey checklist on the phone
 
@@ -1017,6 +1035,39 @@ dozen files, with no new dev build needed (the image picker already supports mul
 **Decide first:** whether it earns its place yet. A single photo is enough for a beta, so wait until
 reviewers ask for more.
 
+### Moderation and account banning inside the app
+
+Not planned and **not built.** In Phase 1 all moderation happens in Supabase Studio (see
+`markdown/moderation.md`): read `review_reports`, hide a review by setting `hidden_at`, ban a user in the
+Auth admin view. That is fine for a beta with a handful of reports a week. Later, build it into the app
+so it can be done from a phone and shared with other moderators.
+
+- **Who can do it.** An admin role: `is_admin` on `profiles`, or better a claim in the user's
+  `app_metadata`, which people cannot edit themselves. Every moderation function checks it on the server.
+  Nothing in the app hides it as the only protection.
+- **Report queue.** An admin-only screen listing open reports newest first, each with the review, its
+  photo, the reporter's reason and details, how many reports the review has and the author's history.
+  Actions: dismiss (set `resolved_at`), hide the review, or hide and ban.
+- **Hide and restore.** Wraps the `hidden_at` update, with a way to undo. Hiding resolves that review's
+  reports in one step.
+- **Ban and unban.** An Edge Function using the service role (never the app) that checks the caller is an
+  admin, sets the auth ban (`ban_duration`), hides the person's reviews, and can reverse it. A banned
+  account cannot sign in or refresh. Show a clear message on the sign-in screen if a banned person tries.
+- **Audit log.** A `moderation_actions` table: who did what, to which review or user, when and why.
+  Needed to answer a dispute or a store query, and it replaces the private spreadsheet the Phase 1
+  process suggests.
+- **Telling people.** Tell the author when a review of theirs is removed and which rule it broke, and
+  offer a way to appeal. Optionally tell a reporter their report was acted on.
+- **Alerts.** A database webhook or `pg_net` trigger that emails or notifies a moderator when a report
+  arrives, so the 24-hour target does not depend on remembering to check.
+- **Tests.** pgTAP for the admin check (a normal user can't hide, ban or read reports), the audit log,
+  and that restoring brings a review back into the scores. Jest for the queue screen.
+- **Docs.** Update `moderation.md`, the Product Design Ideas document (a design for the queue screen
+  first, since none exists) and the Technical Solution Design.
+
+**Decide first:** whether report volume or a second moderator makes Studio impractical. Until then it is
+more work than it saves.
+
 ---
 
 ## Phase 1 completion checklist
@@ -1030,7 +1081,7 @@ reviewers ask for more.
 - [x] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
 - [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [x] M8 Saved tab and Profile
-- [ ] M9 report, block, delete account, legal pages, moderation process (built and hosted; pending phone check)
+- [x] M9 report, block, delete account, legal pages, moderation process
 - [ ] M10 states, Sentry, accessibility, performance and outdoor tests
 - [ ] M11 hosted backend, launch cafes, deploy and release workflows
 - [ ] M12 app config, assets, credentials, first EAS production build
