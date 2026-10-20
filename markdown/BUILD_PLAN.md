@@ -791,9 +791,12 @@ Every screen has loading (skeletons), empty and error states with retry. Offline
 > **10.2 Sentry. Set up.** `@sentry/react-native` is installed with the config plugin, `metro.config.js` and
 > `Sentry.init` + `Sentry.wrap` in `src/app/_layout.tsx` (errors and tracing, `sendDefaultPii: false`, no Session
 > Replay). Sentry project `cupping` in org `williamw`. `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APP_ENV` are
-> EAS variables for `preview` and `production`, `SENTRY_AUTH_TOKEN` is an EAS secret, and the DSN is in
-> `.env.local` for development. **Still to do:** rebuild the dev client, confirm a test error reaches Sentry
-> (needed for M10's "Done when"), and add Sentry to the Privacy Policy.
+> EAS variables for `preview` and `production`, `SENTRY_AUTH_TOKEN` is an EAS secret on `production` only, and
+> the DSN is in `.env.local` for development. **Confirmed:** a test error from the dev build on the phone
+> reached Sentry (issue CUPPING-1, 20 Oct 2026) with a readable stack trace. **Still to do:** add Sentry to
+> the Privacy Policy (an anonymous device ID, and a rough location Sentry derives from the IP address unless
+> "Prevent Storing of IP Addresses" is turned on in the project settings), and check the first EAS build's
+> production stack traces are readable.
 
 ### 10.3 Accessibility
 
@@ -808,7 +811,11 @@ Labels on icon buttons, pins and score tiles ("Coffee 4.6 from 42 ratings"); `St
 
 Run `npx jest --coverage` and aim for ≥ 90% on `src/domain/` and the wizard's draft logic. No target for screens.
 
-**Done when:** every screen has loading, empty and error states, Sentry reports a test error from a dev build, the accessibility checks pass, the performance check is recorded and the coverage target is met. The outdoor field tests moved to M11.5, because they need the hosted backend: a phone on mobile data can't reach the local database on your laptop.
+**Done when:** every screen has loading, empty and error states, Sentry reports a test error from a dev build, the accessibility checks pass, the performance check is recorded and the coverage target is met. **Met.** The outdoor field tests moved to M11.5, because they need the hosted backend: a phone on mobile data can't reach the local database on your laptop.
+
+> **Carried into M11.5, because only a phone can confirm them:** the performance check (10.4: `seed-perf.sql`
+> on a mid-range Android phone), text scaling to 1.3× without clipping, TalkBack, and the look of the error
+> screen, offline banner and map load error. Test coverage was 92.9% across `src/domain/` and the review wizard.
 
 ---
 
@@ -821,11 +828,16 @@ Run `npx jest --coverage` and aim for ≥ 90% on `src/domain/` and the wizard's 
 - Set function secrets (`GOOGLE_PLACES_KEY`) and confirm the hosted Auth settings: email confirmation on, redirect URLs (`coffeerater://*`), Google and Apple providers, password minimum 8, rate limits.
 - Storage bucket and policies present (created by migration).
 - **Do not run `seed.sql` against the hosted project.**
+- **Point the app at the hosted project.** The app reads `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` when the JavaScript bundle is built, and `.env.local` (your local database) is not uploaded to EAS. Set the hosted URL and anon key (never the service-role key) as plaintext EAS variables in the `preview` and `production` environments (`npx eas-cli@latest env:create --environment preview ...`), then build with `eas build --profile preview --platform android`. Also add the variables the preview and production builds need that are only in `.env.local` today: `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` and `GOOGLE_IOS_URL_SCHEME`, plus `SENTRY_AUTH_TOKEN` for `preview` if you want readable traces from the field tests.
+- A development build (`developmentClient`) contains no JavaScript: it loads the bundle from Metro on your laptop, so EAS variables don't apply to it. To aim one at the hosted project, start Metro with the variables set (`EXPO_PUBLIC_SUPABASE_URL=... EXPO_PUBLIC_SUPABASE_ANON_KEY=... npx expo start --dev-client --clear`). It still depends on your laptop, so use a `preview` build for anything outdoors.
 
-### 11.2 Real launch cafes
+### 11.2 Refresh cafe coordinates
 
-- Write `scripts/seed-launch-cafes.ts` that calls `places-search` over a grid covering Melbourne CBD, Carlton and Fitzroy, so the map isn't empty on day one. Run it once, watching the Places usage in Google Cloud.
-- Add a scheduled refresh (Supabase cron + `places-details` or a small `refresh-cafes` function) that refreshes `cafes` rows older than the terms allow, per the M0 decision.
+Google's terms allow caching coordinates for at most 30 days (see `markdown/decisions.md`), so this job is required before any real users.
+
+- Add a scheduled refresh (Supabase cron + `places-details`, or a small `refresh-cafes` function) that re-fetches lat/lng for `cafes` rows with `refreshed_at` older than 25 days, and updates `refreshed_at`. Refresh Place IDs older than 12 months with an ID-only Place Details request (free).
+- Cap each run so a backlog can't blow the Places budget, and log how many rows were refreshed.
+- Test it: a row with an old `refreshed_at` is picked up, a recent one is left alone, and a failed lookup doesn't clear the existing coordinates early.
 
 ### 11.3 CI/CD additions
 
@@ -841,14 +853,15 @@ Move the hosted project to **Supabase Pro** before any beta users (free projects
 
 ### 11.5 Field tests (moved from M10.5)
 
-Do these with a dev or `preview` build pointed at the hosted project (11.1 and 11.2 done), on mobile data, so the phone doesn't depend on your laptop.
+Do these with a `preview` build pointed at the hosted project (11.1 done, with the hosted URL and anon key in the EAS `preview` environment), on mobile data, so the phone doesn't depend on your laptop. A dev build would still load its code from your laptop.
 
 - **Verified-visit radius.** Post reviews outdoors at several CBD cafes, standing outside, at the counter and at a table. Adjust the radius constant if 100 m fails, and record it in `markdown/decisions.md`.
 - **Full journeys, in light and dark mode.** Walk onboarding → sign-up → map → cafe → review → saved → profile → delete account. Use a throwaway account on the hosted project and delete it at the end.
+- **Carried over from M10.** The performance check (10.4), text scaling to 1.3× and TalkBack on the main screens, and a look at the error screen, offline banner (aeroplane mode) and map load error.
 - **No crashes in Sentry** (from M10.2) during the walk, and nothing unexpected in the Supabase logs.
 - Record what you found, and fix or log anything that fails before 12.5.
 
-**Done when:** a dev build pointed at the hosted project (via EAS `preview` environment variables) shows real launch-suburb cafes, a full review round-trip works against production data, and the field tests in 11.5 pass.
+**Done when:** a `preview` build pointed at the hosted project (via EAS `preview` environment variables) opens and shows cafes from Google as you move around the map, a full review round-trip works against production data, and the field tests in 11.5 pass.
 
 ---
 
@@ -1095,6 +1108,6 @@ more work than it saves.
 - [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [x] M8 Saved tab and Profile
 - [x] M9 report, block, delete account, legal pages, moderation process
-- [ ] M10 states, Sentry, accessibility, performance and coverage
-- [ ] M11 hosted backend, launch cafes, deploy and release workflows, field tests
+- [x] M10 states, Sentry, accessibility, performance and coverage
+- [ ] M11 hosted backend, coordinate refresh job, deploy and release workflows, field tests
 - [ ] M12 app config, assets, credentials, first EAS production build
