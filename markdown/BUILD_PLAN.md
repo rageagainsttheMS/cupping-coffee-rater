@@ -657,7 +657,7 @@ Designs: Profile and My reviews, in the Product Design doc (added 20 Oct 2026).
 - A screen outside the tabs (`app/my-reviews.tsx`), opened from Profile. Back button, title, "12 reviews across 9 cafes".
 - **Chips (one at a time):** Newest (default), Highest rated (average of the ratings given), By cafe (A to Z), Has photo (only reviews with a photo).
 - **Card:** cafe name, "Suburb · 2 days ago", four rating tiles (a dash where a metric was skipped), a pill per drink, the comment, the photo thumbnail, and "$5.80 · beans". Tapping the cafe opens its page.
-- **Three-dot menu → Delete review**, with a confirmation. It deletes the review (scores recompute, since they are views), removes the photo file, and refreshes the map, cafe, saved and profile data.
+- **Three-dot menu → Edit review** (8.4) **and Delete review**, with a confirmation for delete. It deletes the review (scores recompute, since they are views), removes the photo file, and refreshes the map, cafe, saved and profile data.
 - `my_reviews()` is migration `20261020100000`, with `supabase/tests/11_my_reviews.test.sql` (own reviews only, hidden ones excluded, newest first, drinks, ratings and photo, anon refused).
 - Empty state ("Rate a cafe"), loading, and error with retry.
 
@@ -672,6 +672,17 @@ Designs: Profile and My reviews, in the Product Design doc (added 20 Oct 2026).
 > **Only a phone can confirm:** the layout of both screens, Location opening system settings and updating on
 > return, the Appearance screen switching the theme, the password email arriving, deleting a review with a photo, and the scores
 > moving on the map afterwards.
+
+### 8.4 Edit review (planned, added 20 Oct 2026)
+
+No design image yet: it reuses the review wizard screens, so the existing designs apply. Start with the pgTAP tests (🧪).
+
+- **What can change:** each drink's rating, Food, Vibe and Work (including "Didn't try", which clears that metric's tags), the quick tags, and the comment (10–280 characters). **What can't:** the cafe, visit date, which drinks, milk, price, beans and photo. The cafe and date decide the verified badge and the one-review-per-day rule, so they stay fixed.
+- **No time limit.** Scores are views, so they recompute at once. This replaces the 24-hour limit of `update_review_ratings` for edits from My reviews; the Posted-screen follow-up keeps using that function.
+- **Marker:** `reviews.edited_at timestamptz` (null until first edit). `cafe_reviews` and `my_reviews` return it, and review cards on the cafe page and in My reviews show a small "Edited" label.
+- **Database 🧪:** `update_review(review_id, drinks, food, vibe, work, tags, comment)` in a migration, own review only, hidden reviews refused, one rating per existing drink (drinks can't be added or removed), tags only for rated metrics and only active ones, comment length rules, sets `edited_at`, returns before and after scores like `submit_review`. Edits don't count toward the review rate limit. pgTAP: another user's review is refused; a rating for a drink not on the review is refused; clearing Work removes its tags; `edited_at` is set; scores move; anon refused.
+- **App:** **Edit review** in the My reviews three-dot menu opens `/review?editId=…`. The wizard loads the review into the form (not a draft; leave the draft alone), skips the cafe, drink and details steps, and goes rate → extras → comment, with the last button "Save changes". Close asks before discarding changes. On save it invalidates My reviews, the cafe, map and saved queries, shows a short confirmation and returns to My reviews. Errors in plain language, as for posting.
+- **Jest 🧪:** the form loads from a review; the skipped steps; "Save changes" sends only the editable fields; the "Edited" label shows only when `edited_at` is set; clearing a metric drops its tags.
 
 **Done when:** saving from the map card or cafe page shows up in Saved, and every Profile row works (M9 rows are added in M9).
 

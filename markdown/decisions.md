@@ -59,6 +59,10 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 
 **Decided 20 Oct 2026: built as designed.** Four chips, one at a time (Newest, Highest rated, By cafe, Has photo), and a three-dot menu with Delete review. "Highest rated" orders by the average of the ratings the review gave. Deleting is permanent and removes the photo file. Editing a review is not included.
 
+### Editing a review
+
+**Decided 20 Oct 2026: allowed, with limits.** Ratings (each drink's, Food, Vibe, Work), tags and the comment can be edited. The cafe, visit date, drinks, milk, price, beans and photo cannot, because the cafe and date drive the verified badge and the one-review-per-day rule, and a different drink would mean a different review. **No time limit**: people should be able to fix a rating later. Edited reviews show an "Edited" label so readers can tell, using a new `reviews.edited_at` column. The flow reuses the review wizard, pre-filled and without the cafe, drink and details steps. Risk to watch after beta: someone could raise ratings on old reviews; scores still use the original visit date for recency. Planned as M8.4.
+
 ### Single or combined metric tabs
 
 **Decided: single-select.** Matches the chosen map screen. Combined tabs ("show the lower score") are Phase 2.
