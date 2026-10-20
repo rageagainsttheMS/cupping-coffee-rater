@@ -625,9 +625,21 @@ Coffee is required to continue; "Didn't try" sends null; the comment counter blo
 
 ### 8.1 Saved tab
 
-- Title "Saved", filter chips: **All · N**, **Best coffee** (Coffee ≥ 4.3), **Good for work** (Work ≥ 4.3).
+- Title "Saved" over the list. No filter chips (dropped 20 Oct 2026, see `decisions.md`).
 - Rows: photo, name, suburb · distance, four coloured score dots, heart to unsave (with undo snackbar). For cafes the user has reviewed, show "Your last rating: Long black 4.0".
 - Empty state that points to the map.
+
+> **Status of 8.1: built, not yet checked on a phone.** Lint, types and Jest tests pass.
+> The route `app/(tabs)/saved.tsx` wires `useSavedCafes` (the `my_saved_cafes()` function, key
+> `saved-cafes`) and `useSetSaved`; `features/saved/SavedView.tsx` draws everything from props.
+> Distance and undo-placement logic is in `features/saved/filters.ts` (tested). Unsaving removes the row
+> at once and shows a 5-second "Removed X · Undo" snackbar (`components/Snackbar.tsx`); Undo puts the row
+> back in its place and re-saves, and a failed request rolls the list back with an alert.
+> **Differences from the design:** the filter chips are dropped (see `decisions.md`), so the Saved image
+> in the Product Design doc still shows the earlier design. Rows show the cup-icon tile the map cards
+> use instead of a photo, because `my_saved_cafes()` returns no photo. **Only a phone can confirm:**
+> layout and the snackbar position above the tab bar. **8.2 Profile is not started:** there is no
+> Profile screen design yet.
 
 ### 8.2 Profile tab
 

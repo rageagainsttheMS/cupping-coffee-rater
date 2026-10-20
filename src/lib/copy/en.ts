@@ -343,6 +343,18 @@ export const copy = {
       distance ? `${suburb} · ${distance}` : suburb,
   },
 
+  saved: {
+    rowLabel: (name: string) => `${name}. Open cafe page`,
+    lastRating: (drink: string, rating: string) => `Your last rating: ${drink} ${rating}`,
+    removed: (name: string) => `Removed ${name}`,
+    undo: "Undo",
+    emptyTitle: "No saved cafes yet",
+    emptyBody: "Tap the heart on a cafe to keep it here.",
+    emptyAction: "Find cafes on the map",
+    loadError: "Couldn't load your saved cafes.",
+    retry: "Try again",
+  },
+
   search: {
     title: "Search",
     placeholder: "Search cafes or suburbs",

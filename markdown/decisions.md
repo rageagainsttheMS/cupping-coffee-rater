@@ -30,7 +30,7 @@ So:
 
 - `place_details_cache` must **not** persist `rating`, `userRatingCount` or opening hours in the database. `places-details` fetches them live per request.
 - The app may hold them only in short-lived in-memory TanStack Query cache (minutes, not days).
-- **Chosen: Google rating and hours appear on the cafe page only**, fetched live through `places-details`. Map pins and cards for unrated cafes show "Rate first" with no Google rating (M5.4 dropped), and the Saved tab has no "Open now" filter or open status (M8.1). The cafe page shows "Open till 4pm" and the greyed Google rating with attribution (M6.1, M6.2) from the live call.
+- **Chosen: Google rating and hours appear on the cafe page only**, fetched live through `places-details`. Map pins and cards for unrated cafes show "Rate first" with no Google rating (M5.4 dropped), and the Saved tab has no open status (M8.1). The cafe page shows "Open till 4pm" and the greyed Google rating with attribution (M6.1, M6.2) from the live call.
 - Attribution: show the Google logo/"Google" wherever Google data appears. Maps Platform requires results from Places on a Google Map to carry attribution.
 
 Also in the current terms: §14.2 says Places content must not be used with a non-Google map (fine: the app uses Google Maps), and §A.2 requires attribution per the Documentation. Re-check the terms before the production build (M12), since they change (about every few months).
@@ -46,6 +46,10 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 ### Minimum-star filter on the map
 
 **Decided: leave out of Phase 1.** It isn't in the chosen Phase 1 screens. Low-scoring pins fade instead. Revisit after beta.
+
+### Filters on the Saved tab
+
+**Decided 20 Oct 2026: none.** The Saved tab is the title over a list, newest saved first. The chips in the design (All, Best coffee, Good for work, and a cut-off "Open now") are dropped. "Open now" was already out because of the Google data decision. The list is short in Phase 1, and the other chips repeated what the map's metric tabs do. The Product Design doc's text was updated; its Saved image still shows the chips.
 
 ### Single or combined metric tabs
 
