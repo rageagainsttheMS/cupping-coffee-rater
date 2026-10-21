@@ -87,6 +87,10 @@ const config: ExpoConfig = {
         ]
       : []),
   ],
+  // Over-the-air updates (`eas update --channel preview`). A build only takes updates with the same
+  // runtime version, so bump `version` whenever a change needs a new native build.
+  runtimeVersion: { policy: "appVersion" },
+  updates: { url: "https://u.expo.dev/01bbdff4-b2da-4d90-b81e-fcbc7136527a" },
   owner: "williamwrigleys-team",
   extra: {
     eas: { projectId: "01bbdff4-b2da-4d90-b81e-fcbc7136527a" },
