@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Email confirmed · Cupping - Coffee Rater</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <nav>
+        <a href="index.html">Home</a>
+      </nav>
+
+      <div id="ok">
+        <h1>Email confirmed</h1>
+        <p class="updated">Cupping - Coffee Rater</p>
+        <p>Thanks, your email address is confirmed. Open the app and sign in to start rating.</p>
+        <p><a href="coffeerater://auth-callback">Open the app</a></p>
+        <p>
+          If the button does nothing, open Cupping on your phone and sign in with the email and
+          password you chose.
+        </p>
+      </div>
+
+      <div id="failed" hidden>
+        <h1>This link has expired</h1>
+        <p class="updated">Cupping - Coffee Rater</p>
+        <p>
+          The confirmation link is no longer valid, or has already been used. If you have not signed
+          in yet, open the app and try signing in. If that does not work, sign up again to get a new
+          email.
+        </p>
+      </div>
+    </main>
+    <script>
+      // Supabase reports a bad or expired link by adding an error to the URL.
+      if (/error/.test(location.hash + location.search)) {
+        document.getElementById("ok").hidden = true;
+        document.getElementById("failed").hidden = false;
+      }
+    </script>
+  </body>
+</html>
