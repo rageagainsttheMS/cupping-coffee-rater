@@ -100,7 +100,7 @@ supabase/
   migrations/   Schema, RLS, scoring and query functions
   functions/    Edge Functions (Deno)
   tests/        pgTAP database tests
-docs-site/      Privacy policy, terms and account deletion pages
+docs-site/      Privacy policy, terms and account deletion pages (see Legal pages)
 markdown/       Build plan, decisions log, moderation process
 ```
 
@@ -162,3 +162,14 @@ npm run db:types        # regenerate src/lib/database.types.ts
 - [Build plan](markdown/BUILD_PLAN.md): milestones from foundations to release
 - [Decisions](markdown/decisions.md): what was decided and why
 - [Moderation](markdown/moderation.md): how reports, blocks and bans are handled
+
+## Legal pages
+
+The Privacy Policy, Terms of Use and account deletion page are hosted on GitHub Pages:
+
+- [Privacy Policy](https://rageagainstthems.github.io/cupping-legal/privacy.html)
+- [Terms of Use](https://rageagainstthems.github.io/cupping-legal/terms.html)
+- [Deleting your account](https://rageagainstthems.github.io/cupping-legal/delete-account.html)
+
+The source is [docs-site/](docs-site/) in this repo. The pages are published from
+[rageagainsttheMS/cupping-legal](https://github.com/rageagainsttheMS/cupping-legal).
