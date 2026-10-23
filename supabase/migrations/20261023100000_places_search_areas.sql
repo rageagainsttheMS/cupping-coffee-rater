@@ -5,7 +5,7 @@
 
 create table public.places_search_areas (
   id bigint generated always as identity primary key,
-  center geography(point, 4326) not null,
+  center extensions.geography (point, 4326) not null,
   -- How far out the search is complete. Less than the search radius when Google hit its result cap.
   radius_m double precision not null check (radius_m >= 0),
   result_count integer not null default 0,
