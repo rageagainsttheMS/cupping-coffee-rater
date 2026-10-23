@@ -15,6 +15,8 @@ export const DETAILS_FIELD_MASK =
  * as a secondary type, so matching on any type lets them onto the map.
  */
 const CAFE_PRIMARY_TYPES = ["cafe", "coffee_shop"];
+/** The most places one Nearby Search returns. Google's own limit. */
+export const NEARBY_MAX_RESULTS = 20;
 const TEXT_SEARCH_BIAS_RADIUS_M = 5000;
 /** Google normally answers in well under a second. Past this, give up with a generic error. */
 const REQUEST_TIMEOUT_MS = 8000;
@@ -130,7 +132,7 @@ export function createPlacesClient({
     async searchNearby({ lat, lng, radiusM }) {
       const { json } = await request("POST", "/v1/places:searchNearby", SEARCH_FIELD_MASK, {
         includedPrimaryTypes: CAFE_PRIMARY_TYPES,
-        maxResultCount: 20,
+        maxResultCount: NEARBY_MAX_RESULTS,
         rankPreference: "DISTANCE",
         locationRestriction: {
           circle: { center: { latitude: lat, longitude: lng }, radius: radiusM },

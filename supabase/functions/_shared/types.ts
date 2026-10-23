@@ -34,6 +34,8 @@ export type PlaceDetails = {
 
 export type Box = { minLng: number; minLat: number; maxLng: number; maxLat: number };
 
+export type Circle = { lat: number; lng: number; radiusM: number };
+
 /** Any failure talking to Google. Carries no response body, so nothing from Google can leak. */
 export class PlacesError extends Error {
   readonly status: number | undefined;
@@ -55,6 +57,11 @@ export interface PlacesClient {
 /** The only database access the functions need. Note there is no way to store ratings or hours. */
 export interface CafeStore {
   countCafesInBox(box: Box): Promise<number>;
+  /** Whether a map-area search since then covered the whole circle. */
+  wasAreaSearchedSince(area: Circle, since: Date): Promise<boolean>;
+  /** Records a map-area search, with the radius out to which its results are complete. */
+  logAreaSearch(covered: Circle, resultCount: number): Promise<void>;
+  /** Text queries, by key. */
   wasSearchedSince(key: string, since: Date): Promise<boolean>;
   logSearch(key: string, resultCount: number): Promise<void>;
   upsertCafes(cafes: PlaceCafe[]): Promise<StoredCafe[]>;

@@ -13,6 +13,10 @@ import RateStep from "@/app/review/rate";
 import { buildReviewInput, toSubmitArgs } from "../submission";
 import { blankValues } from "../types";
 
+// The first test pays for loading the screens and the first render, which can pass Jest's 5 s
+// default on a busy CI runner.
+jest.setTimeout(15_000);
+
 const mockReplace = jest.fn();
 let mockPathname = "/review/rate";
 

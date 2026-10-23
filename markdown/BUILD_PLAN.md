@@ -275,10 +275,10 @@ Both functions live in `supabase/functions/`, require a signed-in user's JWT, re
 ### 3.1 `places-search` 🧪
 
 - Input: bounding box or centre + radius, optional text query.
-- Before calling Google, count stored cafes in the area. If there are enough (e.g. ≥ 10), return early. This is the main cost control.
+- Before calling Google, count stored cafes in the area (for a map view, the visible box itself, matching the app's own check). If there are enough (e.g. ≥ 10), return early. This is the main cost control.
 - Otherwise call Places API (New) Nearby Search (`includedPrimaryTypes: ["cafe", "coffee_shop"]`) or Text Search for a query (`includedType: "cafe"`, `strictTypeFiltering: true`), with a **field mask** limited to `places.id,places.displayName,places.location,places.addressComponents,places.primaryType`. Drop any result whose `primaryType` is not `cafe` or `coffee_shop`, so restaurants that list "cafe" as a secondary type stay off the map.
 - Upsert into `cafes` with the service role (place ID, name, location, suburb from address components, `refreshed_at = now()`).
-- Record each searched area in a `places_search_log` table so the same area isn't searched again. Built as: areas are logged per 0.01° tile (about 1.1 km), text queries per normalised query and tile, and nothing is searched again for 25 days (inside the 30-day coordinate limit).
+- Record each search so the same area isn't searched again, for 25 days (inside the 30-day coordinate limit). Text queries are logged in `places_search_log` per normalised query and 0.01° tile. Map areas are logged in `places_search_areas` as the circle the search covered: Google is asked about twice the view's radius (capped at 3 km), and a full page of 20 results covers only out to the farthest one. A view counts as searched when a recent circle contains it, or a search was centred within 100 m (`area_searched_since`). This replaced per-tile logging of areas, which let one small search block a whole tile.
 - Input is a bounding box (the visible map), a centre point with an optional radius, or a text query. The radius is clamped to 300–3000 m. The response is `{ status: 'enough_stored' | 'recently_searched' | 'searched', cafes }`.
 - Return new cafes as "Rate first" rows.
 

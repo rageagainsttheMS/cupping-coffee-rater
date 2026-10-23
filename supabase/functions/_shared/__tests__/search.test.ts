@@ -1,3 +1,4 @@
+import { NEARBY_MAX_RESULTS } from "../places.ts";
 import { ENOUGH_STORED_CAFES, SEARCH_REPEAT_DAYS, searchPlaces } from "../search.ts";
 import { searchInputSchema } from "../schemas.ts";
 import type { CafeStore, PlaceCafe, PlacesClient } from "../types.ts";
@@ -18,6 +19,8 @@ function setup({
 }: { stored?: number; searchedRecently?: boolean; nearby?: PlaceCafe[] } = {}) {
   const store = {
     countCafesInBox: jest.fn(async () => stored),
+    wasAreaSearchedSince: jest.fn(async () => searchedRecently),
+    logAreaSearch: jest.fn(async () => {}),
     wasSearchedSince: jest.fn(async () => searchedRecently),
     logSearch: jest.fn(async () => {}),
     upsertCafes: jest.fn(async (cafes: PlaceCafe[]) =>
@@ -58,21 +61,26 @@ describe("area search", () => {
     const result = await run({ lat: -37.8, lng: 144.98 });
     expect(result.status).toBe("recently_searched");
     expect(places.searchNearby).not.toHaveBeenCalled();
-    const since = (store.wasSearchedSince.mock.calls[0] as unknown as [string, Date])[1];
+    expect(store.wasAreaSearchedSince).toHaveBeenCalledWith(
+      { lat: -37.8, lng: 144.98, radiusM: 1000 },
+      expect.any(Date),
+    );
+    const since = (store.wasAreaSearchedSince.mock.calls[0] as unknown as [unknown, Date])[1];
     expect(new Date("2026-10-18T00:00:00Z").getTime() - since.getTime()).toBe(
       SEARCH_REPEAT_DAYS * 24 * 60 * 60 * 1000,
     );
   });
 
-  it("searches Google once, stores what it finds and logs the area", async () => {
+  it("searches Google once, twice as wide as the area, stores what it finds and logs the circle", async () => {
     const { run, places, store } = setup({ stored: 2 });
     const result = await run({ lat: -37.8, lng: 144.98, radius_m: 800 });
 
     expect(result.status).toBe("searched");
     expect(places.searchNearby).toHaveBeenCalledTimes(1);
-    expect(places.searchNearby).toHaveBeenCalledWith({ lat: -37.8, lng: 144.98, radiusM: 800 });
+    expect(places.searchNearby).toHaveBeenCalledWith({ lat: -37.8, lng: 144.98, radiusM: 1600 });
     expect(store.upsertCafes).toHaveBeenCalledTimes(1);
-    expect(store.logSearch).toHaveBeenCalledTimes(1);
+    expect(store.logAreaSearch).toHaveBeenCalledWith({ lat: -37.8, lng: 144.98, radiusM: 1600 }, 3);
+    expect(store.logSearch).not.toHaveBeenCalled();
     expect(result.cafes.map((c) => c.name)).toEqual(["Cafe 0", "Cafe 1", "Cafe 2"]);
   });
 
@@ -81,13 +89,51 @@ describe("area search", () => {
     const result = await run({ lat: -37.8, lng: 144.98 });
     expect(result.cafes).toEqual([]);
     expect(store.upsertCafes).not.toHaveBeenCalled();
-    expect((store.logSearch.mock.calls[0] as unknown as [string, number])[1]).toBe(0);
+    expect(store.logAreaSearch).toHaveBeenCalledWith({ lat: -37.8, lng: 144.98, radiusM: 2000 }, 0);
+  });
+
+  it("logs a full page of results as covering only out to the farthest cafe", async () => {
+    // Cafes every ~11 m north of the centre; the last is about 211 m away.
+    const full = Array.from({ length: NEARBY_MAX_RESULTS }, (_, i) => ({
+      ...found(1)[0],
+      googlePlaceId: `g${i}`,
+      lat: -37.8 + i * 0.0001,
+    }));
+    const { run, store } = setup({ nearby: full });
+    await run({ lat: -37.8, lng: 144.98 });
+    const [covered] = store.logAreaSearch.mock.calls[0] as unknown as [{ radiusM: number }];
+    expect(covered.radiusM).toBeGreaterThan(205);
+    expect(covered.radiusM).toBeLessThan(215);
   });
 
   it("stores a place that Google returns twice only once", async () => {
     const { run, store } = setup({ nearby: [...found(2), ...found(2)] });
     await run({ lat: -37.8, lng: 144.98 });
     expect((store.upsertCafes.mock.calls[0] as unknown as [PlaceCafe[]])[0]).toHaveLength(2);
+  });
+
+  it("counts stored cafes in the visible box itself, not a wider area around it", async () => {
+    const { run, store } = setup();
+    await run({ bbox: { min_lng: 144.97, min_lat: -37.82, max_lng: 144.98, max_lat: -37.8 } });
+    expect(store.countCafesInBox).toHaveBeenCalledWith({
+      minLng: 144.97,
+      minLat: -37.82,
+      maxLng: 144.98,
+      maxLat: -37.8,
+    });
+  });
+
+  it("checks whether the circle around the view was searched", async () => {
+    const { run, store } = setup();
+    await run({ bbox: { min_lng: 144.96, min_lat: -37.81, max_lng: 144.98, max_lat: -37.79 } });
+    const [area] = store.wasAreaSearchedSince.mock.calls[0] as unknown as [
+      { lat: number; lng: number; radiusM: number },
+    ];
+    expect(area.lat).toBeCloseTo(-37.8, 5);
+    expect(area.lng).toBeCloseTo(144.97, 5);
+    // Half the diagonal of a box about 1.76 km wide and 2.23 km tall.
+    expect(area.radiusM).toBeGreaterThan(1400);
+    expect(area.radiusM).toBeLessThan(1440);
   });
 
   it("turns a bounding box into a centre and radius, within limits", async () => {
@@ -109,16 +155,6 @@ describe("area search", () => {
     await run({ lat: -37.8, lng: 144.98, radius_m: 5000 });
     expect((places.searchNearby.mock.calls[0] as unknown as [{ radiusM: number }])[0].radiusM).toBe(
       3000,
-    );
-  });
-
-  it("uses the same log key for two points in the same tile", async () => {
-    const a = setup();
-    const b = setup();
-    await a.run({ lat: -37.8012, lng: 144.9821 });
-    await b.run({ lat: -37.8049, lng: 144.9877 });
-    expect((a.store.logSearch.mock.calls[0] as unknown as [string])[0]).toBe(
-      (b.store.logSearch.mock.calls[0] as unknown as [string])[0],
     );
   });
 });

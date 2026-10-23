@@ -15,6 +15,27 @@ export function createCafeStore(db: SupabaseClient): CafeStore {
       return data as number;
     },
 
+    async wasAreaSearchedSince({ lat, lng, radiusM }, since) {
+      const { data, error } = await db.rpc("area_searched_since", {
+        p_lat: lat,
+        p_lng: lng,
+        p_radius_m: radiusM,
+        p_since: since.toISOString(),
+      });
+      if (error) throw error;
+      return data === true;
+    },
+
+    async logAreaSearch({ lat, lng, radiusM }, resultCount) {
+      const { error } = await db.rpc("log_area_search", {
+        p_lat: lat,
+        p_lng: lng,
+        p_radius_m: radiusM,
+        p_result_count: resultCount,
+      });
+      if (error) throw error;
+    },
+
     async wasSearchedSince(key, since) {
       const { data, error } = await db
         .from("places_search_log")

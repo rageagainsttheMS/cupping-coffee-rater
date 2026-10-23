@@ -51,6 +51,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"places_search_areas": {
+                  Row: {
+                    "center": unknown,"id": number,"radius_m": number,"result_count": number,"searched_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "center": unknown,"id"?: never,"radius_m": number,"result_count"?: number,"searched_at"?: string
+                  }
+                  Update: {
+                    "center"?: unknown,"id"?: never,"radius_m"?: number,"result_count"?: number,"searched_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"places_search_log": {
                   Row: {
                     "result_count": number,"search_key": string,"searched_at": string
@@ -373,7 +387,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "cafe_detail":
+            "area_searched_since":
+{ Args: { "p_lat": number,"p_lng": number,"p_radius_m": number,"p_since": string }; Returns: boolean
+                           },
+"cafe_detail":
 { Args: { "p_cafe_id": string }; Returns: Json
                            },
 "cafe_reviews":
@@ -388,6 +405,9 @@ isOneToOne: false
                            },
 "count_cafes_in_box":
 { Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number }; Returns: number
+                           },
+"log_area_search":
+{ Args: { "p_lat": number,"p_lng": number,"p_radius_m": number,"p_result_count": number }; Returns: undefined
                            },
 "my_reviews":
 { Args: Record<PropertyKey, never>; Returns: {

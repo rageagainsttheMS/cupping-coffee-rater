@@ -1,3 +1,4 @@
+import { NEARBY_MAX_RESULTS } from "./places.ts";
 import type { SearchInput } from "./schemas.ts";
 import type { Box, CafeStore, PlaceCafe, PlacesClient, StoredCafe } from "./types.ts";
 
@@ -5,11 +6,16 @@ import type { Box, CafeStore, PlaceCafe, PlacesClient, StoredCafe } from "./type
 export const ENOUGH_STORED_CAFES = 10;
 /** Searched areas and queries are not searched again for this long. Also keeps coordinates inside the 30-day cache limit. */
 export const SEARCH_REPEAT_DAYS = 25;
+/**
+ * Google is asked about a circle this many times wider than the view, so panning a little stays
+ * inside an area already searched. Nearby Search costs the same whatever the radius.
+ */
+export const SEARCH_RADIUS_FACTOR = 2;
 
 const DEFAULT_RADIUS_M = 1000;
 const MIN_RADIUS_M = 300;
 const MAX_RADIUS_M = 3000;
-/** About 1.1 km. Areas are logged per tile so nearby searches share one Google call. */
+/** About 1.1 km. Text queries with a position are logged per tile so nearby ones share one Google call. */
 const TILES_PER_DEGREE = 100;
 const METRES_PER_DEGREE_LAT = 111_320;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -42,16 +48,13 @@ function boxAround({ lat, lng }: Point, radiusM: number): Box {
   return { minLng: lng - dLng, minLat: lat - dLat, maxLng: lng + dLng, maxLat: lat + dLat };
 }
 
-async function storeFound(
-  store: CafeStore,
-  key: string,
-  found: PlaceCafe[],
-): Promise<StoredCafe[]> {
-  // Google can list a place twice. Upserting one place twice in one statement would fail.
-  const unique = [...new Map(found.map((c) => [c.googlePlaceId, c])).values()];
-  const cafes = unique.length > 0 ? await store.upsertCafes(unique) : [];
-  await store.logSearch(key, unique.length);
-  return cafes;
+// Google can list a place twice. Upserting one place twice in one statement would fail.
+const dedupe = (found: PlaceCafe[]) => [
+  ...new Map(found.map((c) => [c.googlePlaceId, c])).values(),
+];
+
+async function storeCafes(store: CafeStore, unique: PlaceCafe[]): Promise<StoredCafe[]> {
+  return unique.length > 0 ? await store.upsertCafes(unique) : [];
 }
 
 export async function searchPlaces(input: SearchInput, deps: Deps): Promise<SearchResult> {
@@ -68,28 +71,42 @@ export async function searchPlaces(input: SearchInput, deps: Deps): Promise<Sear
     const key = `q:${query.toLowerCase()}:${near ? tileKey(near) : "any"}`;
 
     if (await store.wasSearchedSince(key, since)) return { status: "recently_searched", cafes: [] };
-    const found = await places.searchText({ query, near });
-    return { status: "searched", cafes: await storeFound(store, key, found) };
+    const unique = dedupe(await places.searchText({ query, near }));
+    const cafes = await storeCafes(store, unique);
+    await store.logSearch(key, unique.length);
+    return { status: "searched", cafes };
   }
 
   let center: Point;
-  let radiusM: number;
+  let viewRadiusM: number;
+  let view: Box | null = null;
   if (input.bbox) {
     const { min_lng, min_lat, max_lng, max_lat } = input.bbox;
     center = { lat: (min_lat + max_lat) / 2, lng: (min_lng + max_lng) / 2 };
-    radiusM = distanceM(center, { lat: max_lat, lng: max_lng });
+    viewRadiusM = distanceM(center, { lat: max_lat, lng: max_lng });
+    view = { minLng: min_lng, minLat: min_lat, maxLng: max_lng, maxLat: max_lat };
   } else {
     center = { lat: input.lat as number, lng: input.lng as number };
-    radiusM = input.radius_m ?? DEFAULT_RADIUS_M;
+    viewRadiusM = input.radius_m ?? DEFAULT_RADIUS_M;
   }
-  radiusM = Math.round(clamp(radiusM, MIN_RADIUS_M, MAX_RADIUS_M));
+  const areaRadiusM = Math.round(clamp(viewRadiusM, MIN_RADIUS_M, MAX_RADIUS_M));
 
-  if ((await store.countCafesInBox(boxAround(center, radiusM))) >= ENOUGH_STORED_CAFES) {
-    return { status: "enough_stored", cafes: [] };
+  // Count what the person can see, the same way the app decided to ask.
+  const stored = await store.countCafesInBox(view ?? boxAround(center, areaRadiusM));
+  if (stored >= ENOUGH_STORED_CAFES) return { status: "enough_stored", cafes: [] };
+  if (await store.wasAreaSearchedSince({ ...center, radiusM: areaRadiusM }, since)) {
+    return { status: "recently_searched", cafes: [] };
   }
-  const key = tileKey(center);
-  if (await store.wasSearchedSince(key, since)) return { status: "recently_searched", cafes: [] };
 
-  const found = await places.searchNearby({ ...center, radiusM });
-  return { status: "searched", cafes: await storeFound(store, key, found) };
+  const searchRadiusM = Math.min(MAX_RADIUS_M, areaRadiusM * SEARCH_RADIUS_FACTOR);
+  const found = await places.searchNearby({ ...center, radiusM: searchRadiusM });
+  const unique = dedupe(found);
+  // Results come nearest first, so a full page is complete only out to the farthest one.
+  const coveredRadiusM =
+    found.length >= NEARBY_MAX_RESULTS
+      ? Math.floor(Math.max(...unique.map((c) => distanceM(center, c))))
+      : searchRadiusM;
+  const cafes = await storeCafes(store, unique);
+  await store.logAreaSearch({ ...center, radiusM: coveredRadiusM }, unique.length);
+  return { status: "searched", cafes };
 }
