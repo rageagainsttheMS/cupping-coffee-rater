@@ -20,6 +20,7 @@ const googlePlace = {
   id: "ChIJabc",
   displayName: { text: "Brother Baba Budan", languageCode: "en" },
   location: { latitude: -37.8136, longitude: 144.9631 },
+  primaryType: "cafe",
   addressComponents: [
     { longText: "Melbourne", shortText: "Melbourne", types: ["locality", "political"] },
     { longText: "Victoria", shortText: "VIC", types: ["administrative_area_level_1"] },
@@ -36,11 +37,12 @@ describe("searchNearby", () => {
     expect(init.method).toBe("POST");
     expect(init.headers["X-Goog-Api-Key"]).toBe(KEY);
     expect(init.headers["X-Goog-FieldMask"]).toBe(
-      "places.id,places.displayName,places.location,places.addressComponents",
+      "places.id,places.displayName,places.location,places.addressComponents,places.primaryType",
     );
     expect(SEARCH_FIELD_MASK).toBe(init.headers["X-Goog-FieldMask"]);
     expect(JSON.parse(init.body)).toEqual({
-      includedTypes: ["cafe", "coffee_shop"],
+      // Primary types only: a restaurant that also lists "cafe" as a secondary type is not a cafe.
+      includedPrimaryTypes: ["cafe", "coffee_shop"],
       maxResultCount: 20,
       rankPreference: "DISTANCE",
       locationRestriction: {
@@ -91,6 +93,21 @@ describe("searchNearby", () => {
     const { client } = setup(reply(200, {}));
     expect(await client.searchNearby({ lat: -37.8, lng: 144.97, radiusM: 1000 })).toEqual([]);
   });
+
+  it("keeps cafes and coffee shops and skips places whose main type is something else", async () => {
+    const { client } = setup(
+      reply(200, {
+        places: [
+          googlePlace,
+          { ...googlePlace, id: "ChIJcoffee", primaryType: "coffee_shop" },
+          { ...googlePlace, id: "ChIJitalian", primaryType: "italian_restaurant" },
+          { ...googlePlace, id: "ChIJuntyped", primaryType: undefined },
+        ],
+      }),
+    );
+    const cafes = await client.searchNearby({ lat: -37.8, lng: 144.97, radiusM: 1000 });
+    expect(cafes.map((c) => c.googlePlaceId)).toEqual(["ChIJabc", "ChIJcoffee"]);
+  });
 });
 
 describe("searchText", () => {
@@ -104,9 +121,20 @@ describe("searchText", () => {
     expect(JSON.parse(init.body)).toEqual({
       textQuery: "market lane",
       includedType: "cafe",
+      strictTypeFiltering: true,
       pageSize: 20,
       locationBias: { circle: { center: { latitude: -37.8, longitude: 144.97 }, radius: 5000 } },
     });
+  });
+
+  it("skips places whose main type is not a cafe or coffee shop", async () => {
+    const { client } = setup(
+      reply(200, {
+        places: [googlePlace, { ...googlePlace, id: "ChIJitalian", primaryType: "restaurant" }],
+      }),
+    );
+    const cafes = await client.searchText({ query: "market lane" });
+    expect(cafes.map((c) => c.googlePlaceId)).toEqual(["ChIJabc"]);
   });
 
   it("omits the bias when no position is given", async () => {

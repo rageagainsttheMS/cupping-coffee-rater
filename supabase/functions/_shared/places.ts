@@ -6,10 +6,15 @@ const DEFAULT_BASE_URL = "https://places.googleapis.com";
 
 // Field masks are what Google bills on, so each request asks only for what the app uses.
 export const SEARCH_FIELD_MASK =
-  "places.id,places.displayName,places.location,places.addressComponents";
+  "places.id,places.displayName,places.location,places.addressComponents,places.primaryType";
 export const DETAILS_FIELD_MASK =
   "id,displayName,location,regularOpeningHours,currentOpeningHours,rating,userRatingCount,googleMapsUri";
 
+/**
+ * A place counts as a cafe only if its main type is one of these. Many restaurants list "cafe"
+ * as a secondary type, so matching on any type lets them onto the map.
+ */
+const CAFE_PRIMARY_TYPES = ["cafe", "coffee_shop"];
 const TEXT_SEARCH_BIAS_RADIUS_M = 5000;
 /** Google normally answers in well under a second. Past this, give up with a generic error. */
 const REQUEST_TIMEOUT_MS = 8000;
@@ -29,6 +34,7 @@ const placeSchema = z.object({
   id: z.string().min(1).optional(),
   displayName: z.object({ text: z.string().min(1) }).optional(),
   location: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
+  primaryType: z.string().optional(),
   addressComponents: z
     .array(z.object({ longText: z.string().optional(), types: z.array(z.string()).optional() }))
     .optional(),
@@ -65,8 +71,10 @@ function toCafes(body: unknown): PlaceCafe[] {
   for (const raw of places) {
     const parsed = placeSchema.safeParse(raw);
     if (!parsed.success) continue;
-    const { id, displayName, location } = parsed.data;
+    const { id, displayName, location, primaryType } = parsed.data;
     if (!id || !displayName || !location) continue;
+    // Text Search can only filter on one type, and matches it against any of a place's types.
+    if (!primaryType || !CAFE_PRIMARY_TYPES.includes(primaryType)) continue;
     cafes.push({
       googlePlaceId: id,
       name: displayName.text,
@@ -121,7 +129,7 @@ export function createPlacesClient({
   return {
     async searchNearby({ lat, lng, radiusM }) {
       const { json } = await request("POST", "/v1/places:searchNearby", SEARCH_FIELD_MASK, {
-        includedTypes: ["cafe", "coffee_shop"],
+        includedPrimaryTypes: CAFE_PRIMARY_TYPES,
         maxResultCount: 20,
         rankPreference: "DISTANCE",
         locationRestriction: {
@@ -135,6 +143,7 @@ export function createPlacesClient({
       const { json } = await request("POST", "/v1/places:searchText", SEARCH_FIELD_MASK, {
         textQuery: query,
         includedType: "cafe",
+        strictTypeFiltering: true,
         pageSize: 20,
         ...(near && {
           locationBias: {
