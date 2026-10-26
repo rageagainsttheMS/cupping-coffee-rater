@@ -1,5 +1,5 @@
 import type { Metric } from "@/domain/metrics";
-import type { ReviewDrink } from "@/features/cafe/types";
+import type { ReviewDrink, ReviewPhoto } from "@/features/cafe/types";
 
 /**
  * One row from `my_reviews()`. The function returns JSON for drinks and ratings, which the generated
@@ -22,9 +22,7 @@ export type MyReview = {
   /** Food, vibe and work only. Coffee is the drinks' ratings. Unrated metrics are missing. */
   ratings: Partial<Record<Exclude<Metric, "coffee">, number>>;
   tags: { tag_id: number; metric: Metric; label: string }[];
-  photo_path: string | null;
-  photo_width: number | null;
-  photo_height: number | null;
+  photos: ReviewPhoto[];
 };
 
 /** The chips on My reviews. One is chosen at a time. */

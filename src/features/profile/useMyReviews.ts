@@ -35,10 +35,13 @@ export function useDeleteReview() {
     mutationFn: async (review: MyReview) => {
       const { error } = await supabase.from("reviews").delete().eq("id", review.review_id);
       if (error) throw error;
-      if (review.photo_path) {
+      const files = review.photos.flatMap((p) =>
+        p.thumb_path ? [p.path, p.thumb_path] : [p.path],
+      );
+      if (files.length > 0) {
         await supabase.storage
           .from(PHOTO_BUCKET)
-          .remove([review.photo_path])
+          .remove(files)
           .catch(() => {});
       }
     },

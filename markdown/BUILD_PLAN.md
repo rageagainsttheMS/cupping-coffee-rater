@@ -1030,7 +1030,7 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
 
 ### Multiple photos per review (future)
 
-Not built. Phase 1 allows **one photo per review** (`review_photos` is keyed on `review_id`), matching
+**Built 26 Oct 2026** (migration `20261026110000_multiple_photos.sql`): up to 3 photos per review, each with a 480 px thumbnail made on the phone (`review_photos.position` and `thumb_path`, `submit_review(p_photos)`, a `photos` list on `cafe_reviews` and `my_reviews`). The wizard, cafe page and My reviews layouts were designed in code with no mock-up, and the Technical Solution Design and Product Design Ideas documents still say "one photo" and need updating. The text below is the original plan. Phase 1 allowed **one photo per review** (`review_photos` is keyed on `review_id`), matching
 the design doc's "one photo to start". Raised during M7 testing. Rough size: a migration plus about a
 dozen files, with no new dev build needed (the image picker already supports multiple selection).
 

@@ -121,20 +121,20 @@ isOneToOne: false
                   ]
                 },"review_photos": {
                   Row: {
-                    "height": number | null,"review_id": string,"storage_path": string,"width": number | null
+                    "height": number | null,"position": number,"review_id": string,"storage_path": string,"thumb_path": string | null,"width": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "height"?: number | null,"review_id": string,"storage_path": string,"width"?: number | null
+                    "height"?: number | null,"position": number,"review_id": string,"storage_path": string,"thumb_path"?: string | null,"width"?: number | null
                   }
                   Update: {
-                    "height"?: number | null,"review_id"?: string,"storage_path"?: string,"width"?: number | null
+                    "height"?: number | null,"position"?: number,"review_id"?: string,"storage_path"?: string,"thumb_path"?: string | null,"width"?: number | null
                   }
                   Relationships: [
                     {
       foreignKeyName: "review_photos_review_id_fkey"
       columns: ["review_id"]
-isOneToOne: true
+isOneToOne: false
       referencedRelation: "reviews"
       referencedColumns: ["id"]
     }
@@ -395,7 +395,7 @@ isOneToOne: false
                            },
 "cafe_reviews":
 { Args: { "p_before_created_at"?: string,"p_before_id"?: string,"p_cafe_id": string,"p_drink_id"?: number,"p_metric"?: Database["public"]['Enums']["metric"],"p_page_size"?: number,"p_sort"?: string }; Returns: {
-              "author_name": string,"beans": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"tags": Json,"user_id": string,"verified": boolean,"visit_date": string
+              "author_name": string,"beans": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photos": Json,"ratings": Json,"review_id": string,"tags": Json,"user_id": string,"verified": boolean,"visit_date": string
             }[]
                            },
 "cafes_in_view":
@@ -411,13 +411,16 @@ isOneToOne: false
                            },
 "my_reviews":
 { Args: Record<PropertyKey, never>; Returns: {
-              "beans": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photo_height": number,"photo_path": string,"photo_width": number,"ratings": Json,"review_id": string,"suburb": string,"tags": Json,"verified": boolean,"visit_date": string
+              "beans": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"edited_at": string,"photos": Json,"ratings": Json,"review_id": string,"suburb": string,"tags": Json,"verified": boolean,"visit_date": string
             }[]
                            },
 "my_saved_cafes":
 { Args: Record<PropertyKey, never>; Returns: {
               "coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"id": string,"last_drink_name": string,"last_rating": number,"lat": number,"lng": number,"name": string,"saved_at": string,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
             }[]
+                           },
+"max_review_photos":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "mark_place_id_checked":
 { Args: { "p_cafe_id": string,"p_place_id": string }; Returns: undefined
@@ -444,7 +447,7 @@ isOneToOne: false
             }[]
                            },
 "submit_review":
-{ Args: { "p_beans"?: string,"p_cafe_id": string,"p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_lat"?: number,"p_lng"?: number,"p_photo_height"?: number,"p_photo_path"?: string,"p_photo_width"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
+{ Args: { "p_beans"?: string,"p_cafe_id": string,"p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_lat"?: number,"p_lng"?: number,"p_photos"?: Json,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json
                            },
 "update_review":
 { Args: { "p_comment"?: string,"p_drinks": Json,"p_food"?: number,"p_review_id": string,"p_tags"?: Json,"p_vibe"?: number,"p_work"?: number }; Returns: Json

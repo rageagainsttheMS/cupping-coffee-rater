@@ -16,7 +16,8 @@ type Props = {
   /** The metric chosen with the score tiles. Its rating is the big badge. */
   metric: Metric;
   drinkId: number | null;
-  onOpenPhoto: (path: string) => void;
+  /** Opens the viewer on photo `index` of these paths. */
+  onOpenPhoto: (paths: string[], index: number) => void;
   /** Opens the report and block menu. Left out for the person's own reviews. */
   onMenu?: () => void;
 };
@@ -33,6 +34,7 @@ function drinkLine(drink: ReviewDrink): string {
 
 /** One review: who, what they drank, the selected metric's rating, the others, and their words. */
 export function ReviewCard({ review, metric, drinkId, onOpenPhoto, onMenu }: Props) {
+  const paths = review.photos.map((p) => p.path);
   const { colors, metrics } = useTheme();
   const main = reviewMetricRating(review, metric, drinkId);
   const others = otherRatings(review, metric, METRICS);
@@ -133,14 +135,34 @@ export function ReviewCard({ review, metric, drinkId, onOpenPhoto, onMenu }: Pro
 
       <Text>{review.comment}</Text>
 
-      {review.photo_path ? (
+      {review.photos.length === 1 ? (
         <Pressable
           accessibilityRole="imagebutton"
           accessibilityLabel={copy.cafe.photoLabel(1, 1)}
-          onPress={() => onOpenPhoto(review.photo_path as string)}
+          onPress={() => onOpenPhoto(paths, 0)}
         >
-          <SignedImage path={review.photo_path} style={{ height: 180, borderRadius: radius.md }} />
+          <SignedImage
+            path={review.photos[0].path}
+            style={{ height: 180, borderRadius: radius.md }}
+          />
         </Pressable>
+      ) : review.photos.length > 1 ? (
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          {review.photos.map((photo, index) => (
+            <Pressable
+              key={photo.path}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={copy.cafe.photoLabel(index + 1, review.photos.length)}
+              onPress={() => onOpenPhoto(paths, index)}
+              style={{ flex: 1 }}
+            >
+              <SignedImage
+                path={photo.thumb_path ?? photo.path}
+                style={{ aspectRatio: 1, borderRadius: radius.md }}
+              />
+            </Pressable>
+          ))}
+        </View>
       ) : null}
     </View>
   );

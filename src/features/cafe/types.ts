@@ -48,6 +48,14 @@ export type ReviewDrink = {
   price_aud: number | null;
 };
 
+/** A photo on a review. `thumb_path` is null for photos from before thumbnails existed. */
+export type ReviewPhoto = {
+  path: string;
+  thumb_path: string | null;
+  width: number | null;
+  height: number | null;
+};
+
 export type CafeReview = {
   review_id: string;
   user_id: string;
@@ -64,15 +72,19 @@ export type CafeReview = {
   /** Food, vibe and work only. Coffee is the drinks' ratings. Unrated metrics are missing. */
   ratings: Partial<Record<Exclude<Metric, "coffee">, number>>;
   tags: { tag_id: number; metric: Metric; label: string }[];
-  photo_path: string | null;
-  photo_width: number | null;
-  photo_height: number | null;
+  /** In order, the first is the cover. Empty when the review has no photos. */
+  photos: ReviewPhoto[];
 };
 
 /** Where the next page of reviews starts: the last row of the page before. */
 export type ReviewCursor = { created_at: string; review_id: string };
 
-export type CafePhoto = { path: string; width: number | null; height: number | null };
+export type CafePhoto = {
+  path: string;
+  thumb_path: string | null;
+  width: number | null;
+  height: number | null;
+};
 
 /** What the reviews list needs from a query, so the page can be tested without a network. */
 export type ReviewsResult = {

@@ -17,6 +17,17 @@ const reviewDrink = z.object({
     .optional(),
 });
 
+/** The most photos one review can have. The server enforces the same cap. */
+export const MAX_PHOTOS = 3;
+
+/** A photo already uploaded to Storage, with an optional small copy for lists and grids. */
+const uploadedPhoto = z.object({
+  path: z.string().min(1),
+  thumbPath: z.string().min(1).optional(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 /** Null means "Didn't try". */
 const optionalRating = rating.nullable().optional();
 
@@ -34,13 +45,7 @@ export const reviewSchema = z.object({
   tagIds: z.array(z.number().int().positive()),
   comment: z.string().trim().min(COMMENT_MIN).max(COMMENT_MAX),
   beans: z.string().trim().max(80).optional(),
-  photo: z
-    .object({
-      path: z.string().min(1),
-      width: z.number().int().positive(),
-      height: z.number().int().positive(),
-    })
-    .optional(),
+  photos: z.array(uploadedPhoto).max(MAX_PHOTOS).optional(),
   location: z
     .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
     .optional(),

@@ -54,9 +54,7 @@ const mockReview: MyReview = {
   drinks: [{ drink_id: 3, name: "Long black", rating: 4, milk: null, price_aud: null }],
   ratings: {},
   tags: [],
-  photo_path: null,
-  photo_width: null,
-  photo_height: null,
+  photos: [],
 };
 jest.mock("@/features/profile/useMyReviews", () => ({
   MY_REVIEWS_KEY: "my-reviews",

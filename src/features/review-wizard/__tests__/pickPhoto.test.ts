@@ -1,6 +1,6 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { pickPhoto } from "../photo";
+import { pickPhotos } from "../photo";
 
 jest.mock("expo-image-picker", () => ({
   requestCameraPermissionsAsync: jest.fn(),
@@ -32,36 +32,65 @@ const asset = (width: number, height: number) => ({
   assets: [{ uri: "file:///in.jpg", width, height }],
 });
 
-describe("pickPhoto", () => {
+describe("pickPhotos", () => {
   it("does not open the camera without permission", async () => {
     permission.mockResolvedValue({ granted: false });
-    expect(await pickPhoto("camera")).toEqual({ status: "denied" });
+    expect(await pickPhotos("camera")).toEqual({ status: "denied" });
     expect(camera).not.toHaveBeenCalled();
   });
 
   it("reports a cancelled pick", async () => {
     library.mockResolvedValue({ canceled: true, assets: [] });
-    expect(await pickPhoto("library")).toEqual({ status: "cancelled" });
+    expect(await pickPhotos("library")).toEqual({ status: "cancelled" });
   });
 
   it("shrinks a large photo and returns the saved file", async () => {
     camera.mockResolvedValue(asset(4000, 3000));
-    expect(await pickPhoto("camera")).toEqual({
+    expect(await pickPhotos("camera")).toEqual({
       status: "ok",
-      photo: { uri: "file:///out.jpg", width: 1600, height: 1200 },
+      photos: [{ uri: "file:///out.jpg", width: 1600, height: 1200, thumbUri: "file:///out.jpg" }],
     });
     expect(resize).toHaveBeenCalledWith({ width: 1600 });
+    expect(resize).toHaveBeenCalledWith({ width: 480 });
   });
 
   it("does not resize a photo that is already small", async () => {
     library.mockResolvedValue(asset(800, 600));
-    await pickPhoto("library");
-    expect(resize).not.toHaveBeenCalled();
+    await pickPhotos("library");
+    expect(resize).not.toHaveBeenCalledWith({ width: 1600 });
     expect(saveAsync).toHaveBeenCalledWith({ format: "jpeg", compress: 0.7 });
+  });
+
+  it("lets the library pick several, up to the room left, and shrinks each", async () => {
+    library.mockResolvedValue({
+      canceled: false,
+      assets: [
+        { uri: "file:///1.jpg", width: 4000, height: 3000 },
+        { uri: "file:///2.jpg", width: 3000, height: 4000 },
+        { uri: "file:///3.jpg", width: 800, height: 600 },
+      ],
+    });
+    const result = await pickPhotos("library", 2);
+    expect(library).toHaveBeenCalledWith(
+      expect.objectContaining({ allowsMultipleSelection: true, selectionLimit: 2 }),
+    );
+    expect(result.status === "ok" && result.photos).toHaveLength(2);
+    expect(resize).toHaveBeenCalledWith({ height: 1600 });
+  });
+
+  it("takes one photo at a time with the camera", async () => {
+    camera.mockResolvedValue(asset(800, 600));
+    await pickPhotos("camera", 3);
+    expect(camera.mock.calls[0][0].allowsMultipleSelection).toBeUndefined();
+  });
+
+  it("does not open the picker when the review is full", async () => {
+    expect(await pickPhotos("library", 0)).toEqual({ status: "cancelled" });
+    expect(library).not.toHaveBeenCalled();
   });
 
   it("reports a failure instead of throwing", async () => {
     library.mockRejectedValue(new Error("no gallery"));
-    expect(await pickPhoto("library")).toEqual({ status: "failed" });
+    expect(await pickPhotos("library")).toEqual({ status: "failed" });
   });
 });

@@ -32,9 +32,7 @@ const review: MyReview = {
     { tag_id: 2, metric: "coffee", label: "Smooth" },
     { tag_id: 31, metric: "work", label: "Wifi" },
   ],
-  photo_path: "u/r.jpg",
-  photo_width: 10,
-  photo_height: 10,
+  photos: [{ path: "u/r.jpg", thumb_path: null, width: 10, height: 10 }],
 };
 
 const tag = (id: number, metric: ReferenceTag["metric"], active = true): ReferenceTag => ({
@@ -118,7 +116,7 @@ describe("hasChanges", () => {
   });
 
   it("ignores things an edit cannot change", () => {
-    expect(hasChanges(initial, { ...initial, beans: "Other", photo: null })).toBe(false);
+    expect(hasChanges(initial, { ...initial, beans: "Other", photos: [] })).toBe(false);
   });
 });
 

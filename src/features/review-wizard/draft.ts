@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MILKS } from "@/domain/drinks";
+import { MAX_PHOTOS } from "@/domain/review.schema";
 import { dropInactiveTagIds } from "@/domain/reference";
 import type { ReferenceTag } from "@/domain/reference";
 import { blankValues, WIZARD_STEPS } from "./types";
@@ -23,6 +24,13 @@ export type StoredDraft = {
 };
 
 const rating = z.number().min(1).max(5).nullable();
+
+const photoSchema = z.object({
+  uri: z.string(),
+  width: z.number(),
+  height: z.number(),
+  thumbUri: z.string().optional(),
+});
 
 // Loose on purpose: a draft is the person's work in progress, so only the shape is checked here.
 // The full review rules run when it is posted.
@@ -58,7 +66,9 @@ const draftSchema = z.object({
     tagIds: z.array(z.number().int()),
     comment: z.string(),
     beans: z.string(),
-    photo: z.object({ uri: z.string(), width: z.number(), height: z.number() }).nullable(),
+    // Drafts saved before multiple photos hold a single `photo` instead of the list.
+    photo: photoSchema.nullable().optional(),
+    photos: z.array(photoSchema).max(MAX_PHOTOS).optional(),
   }),
 });
 
@@ -113,13 +123,15 @@ export async function loadDraft(
   if (age < 0 || age >= DRAFT_MAX_AGE_MS) return null;
 
   const drinkIndex = Math.min(parsed.data.drinkIndex, values.drinks.length - 1);
+  const { photo, photos, ...rest } = values;
   return {
     savedAt,
     step,
     drinkIndex,
     values: {
       ...blankValues(values.reviewId),
-      ...values,
+      ...rest,
+      photos: photos ?? (photo ? [photo] : []),
       tagIds: dropInactiveTagIds(values.tagIds, tags),
     },
   };

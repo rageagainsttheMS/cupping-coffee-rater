@@ -7,7 +7,7 @@ import type { ReviewInput } from "@/domain/review.schema";
 import type { WizardValues } from "./types";
 
 type Location = { lat: number; lng: number };
-type UploadedPhoto = { path: string; width: number; height: number };
+type UploadedPhoto = { path: string; thumbPath?: string; width: number; height: number };
 
 /** Metrics the review rates. Coffee always is: the wizard cannot continue without it. */
 function ratedMetrics(values: WizardValues): Set<Metric> {
@@ -36,7 +36,7 @@ export function usableTagIds(values: WizardValues, tags: readonly ReferenceTag[]
 export function buildReviewInput(
   values: WizardValues,
   tags: readonly ReferenceTag[],
-  extras: { location?: Location | null; photo?: UploadedPhoto | null } = {},
+  extras: { location?: Location | null; photos?: UploadedPhoto[] } = {},
 ) {
   const tagIds = usableTagIds(values, tags);
 
@@ -64,7 +64,7 @@ export function buildReviewInput(
     tagIds,
     comment: values.comment,
     ...(beans ? { beans } : {}),
-    ...(extras.photo ? { photo: extras.photo } : {}),
+    ...(extras.photos?.length ? { photos: extras.photos } : {}),
     ...(extras.location ? { location: extras.location } : {}),
   });
 }
@@ -86,9 +86,12 @@ export function toSubmitArgs(input: ReviewInput) {
     p_tags: input.tagIds,
     p_comment: input.comment,
     p_beans: input.beans,
-    p_photo_path: input.photo?.path,
-    p_photo_width: input.photo?.width,
-    p_photo_height: input.photo?.height,
+    p_photos: (input.photos ?? []).map((p) => ({
+      path: p.path,
+      thumb_path: p.thumbPath ?? null,
+      width: p.width,
+      height: p.height,
+    })),
     p_lat: input.location?.lat,
     p_lng: input.location?.lng,
   };

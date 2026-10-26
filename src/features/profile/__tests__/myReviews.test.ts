@@ -16,9 +16,7 @@ const review = (over: Partial<MyReview> = {}): MyReview => ({
   drinks: [{ drink_id: 1, name: "Magic", rating: 4.5, milk: null, price_aud: null }],
   ratings: {},
   tags: [],
-  photo_path: null,
-  photo_width: null,
-  photo_height: null,
+  photos: [],
   ...over,
 });
 
@@ -40,7 +38,7 @@ describe("arrangeReviews", () => {
     cafe_name: "Alpha",
     created_at: "2026-10-12T00:00:00Z",
     drinks: [{ drink_id: 1, name: "Magic", rating: 3, milk: null, price_aud: null }],
-    photo_path: "u/b.jpg",
+    photos: [{ path: "u/b.jpg", thumb_path: null, width: 10, height: 10 }],
   });
   const c = review({ review_id: "c", cafe_name: "Mid", created_at: "2026-10-11T00:00:00Z" });
   const ids = (list: MyReview[]) => list.map((r) => r.review_id);

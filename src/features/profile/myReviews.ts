@@ -33,7 +33,7 @@ export function arrangeReviews(reviews: readonly MyReview[], mode: MyReviewsMode
     case "cafe":
       return [...reviews].sort((a, b) => a.cafe_name.localeCompare(b.cafe_name) || byNewest(a, b));
     case "photo":
-      return reviews.filter((r) => r.photo_path !== null).sort(byNewest);
+      return reviews.filter((r) => r.photos.length > 0).sort(byNewest);
   }
 }
 

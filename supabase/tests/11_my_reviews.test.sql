@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 delete from auth.users;
 delete from public.cafes;
 
-select plan(8);
+select plan(10);
 
 insert into auth.users (id, email, raw_user_meta_data)
 select ('00000000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'u' || g || '@example.test',
@@ -46,6 +46,10 @@ insert into public.review_ratings (review_id, metric, rating) values
 insert into public.review_photos (review_id, storage_path, width, height) values
   ('20000000-0000-4000-8000-000000000001',
    '00000000-0000-4000-8000-000000000001/20000000-0000-4000-8000-000000000001.jpg', 1200, 1600);
+insert into public.review_photos (review_id, position, storage_path, thumb_path, width, height) values
+  ('20000000-0000-4000-8000-000000000001', 1,
+   '00000000-0000-4000-8000-000000000001/20000000-0000-4000-8000-000000000001_1.jpg',
+   '00000000-0000-4000-8000-000000000001/20000000-0000-4000-8000-000000000001_1_t.jpg', 800, 600);
 
 create function pg_temp.act_as(n int) returns void language sql as
   $$ select set_config('request.jwt.claims',
@@ -75,9 +79,17 @@ select is(
    where review_id = '20000000-0000-4000-8000-000000000001'),
   '{"work": 5}', 'my_reviews: returns food, vibe and work ratings that were given');
 select is(
-  (select photo_width from public.my_reviews()
+  (select (photos -> 0 ->> 'width')::int from public.my_reviews()
    where review_id = '20000000-0000-4000-8000-000000000001'),
   1200, 'my_reviews: returns the photo');
+select is(
+  (select jsonb_array_length(photos) from public.my_reviews()
+   where review_id = '20000000-0000-4000-8000-000000000001'),
+  2, 'my_reviews: returns every photo of a review in one row');
+select is(
+  (select count(*)::int from public.my_reviews()
+   where review_id = '20000000-0000-4000-8000-000000000001'),
+  1, 'my_reviews: a review with several photos is not repeated');
 select pg_temp.act_as(2);
 select is(
   (select count(*)::int from public.my_reviews()),

@@ -56,16 +56,31 @@ async function uploadPhoto(uri: string, path: string): Promise<void> {
   }
 }
 
+/** Where photo `index` of a review lives. Files stay flat in the person's folder, so deleting an account finds them. */
+export function photoPaths(userId: string, reviewId: string, index: number) {
+  const base = `${userId}/${reviewId}_${index}`;
+  return { path: `${base}.jpg`, thumbPath: `${base}_t.jpg` };
+}
+
+async function removeFiles(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  await supabase.storage
+    .from(PHOTO_BUCKET)
+    .remove(paths)
+    .catch(() => {});
+}
+
 /**
- * Posts a review: location, then the photo, then `submit_review`. If the function fails after the
- * photo went up, the photo is deleted so nothing is left behind. Retrying is safe: the same review
- * id and photo path are reused, and the upload overwrites.
+ * Posts a review: location, then the photos, then `submit_review`. The photos and their thumbnails
+ * upload in parallel. If any upload fails, or the function fails after they went up, every file is
+ * deleted so nothing is left behind. Retrying is safe: the same review id and paths are reused, and
+ * the uploads overwrite.
  */
 export async function postReview(args: {
   values: WizardValues;
   tags: readonly ReferenceTag[];
   userId: string;
-  /** Skip the photo, details and all, for "Skip and post". */
+  /** Skip the photos, details and all, for "Skip and post". */
   withoutDetails?: boolean;
 }): Promise<PostResult> {
   const { userId, tags } = args;
@@ -73,32 +88,43 @@ export async function postReview(args: {
     ? {
         ...args.values,
         beans: "",
-        photo: null,
+        photos: [],
         drinks: args.values.drinks.map((d) => ({ ...d, priceAud: null })),
       }
     : args.values;
 
   const location = await currentLocation();
 
-  const photoPath = values.photo ? `${userId}/${values.reviewId}.jpg` : null;
+  const planned = values.photos.map((photo, index) => {
+    const { path, thumbPath } = photoPaths(userId, values.reviewId, index);
+    return { photo, path, thumbPath: photo.thumbUri ? thumbPath : undefined };
+  });
   const parsed = buildReviewInput(values, tags, {
     location,
-    photo:
-      values.photo && photoPath
-        ? { path: photoPath, width: values.photo.width, height: values.photo.height }
-        : null,
+    photos: planned.map(({ photo, path, thumbPath }) => ({
+      path,
+      thumbPath,
+      width: photo.width,
+      height: photo.height,
+    })),
   });
   if (!parsed.success) throw new InvalidReviewError();
 
-  if (values.photo && photoPath) await uploadPhoto(values.photo.uri, photoPath);
+  const uploaded = planned.flatMap(({ photo, path, thumbPath }) => [
+    { uri: photo.uri, path },
+    ...(thumbPath && photo.thumbUri ? [{ uri: photo.thumbUri, path: thumbPath }] : []),
+  ]);
+  const files = uploaded.map((f) => f.path);
+  try {
+    await Promise.all(uploaded.map((f) => uploadPhoto(f.uri, f.path)));
+  } catch (error) {
+    await removeFiles(files);
+    throw error;
+  }
 
   const { data, error } = await supabase.rpc("submit_review", toSubmitArgs(parsed.data));
   if (error) {
-    if (photoPath)
-      await supabase.storage
-        .from(PHOTO_BUCKET)
-        .remove([photoPath])
-        .catch(() => {});
+    await removeFiles(files);
     throw error;
   }
   return data as unknown as PostResult;

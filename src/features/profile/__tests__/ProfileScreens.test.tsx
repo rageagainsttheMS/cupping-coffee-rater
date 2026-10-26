@@ -27,9 +27,7 @@ const review = (over: Partial<MyReview> = {}): MyReview => ({
   drinks: [{ drink_id: 1, name: "Magic", rating: 4.5, milk: null, price_aud: 5.8 }],
   ratings: { food: 4, vibe: 4.5, work: 5 },
   tags: [],
-  photo_path: "u/r1.jpg",
-  photo_width: 10,
-  photo_height: 10,
+  photos: [{ path: "u/r1.jpg", thumb_path: null, width: 10, height: 10 }],
   ...over,
 });
 
@@ -43,7 +41,7 @@ const reviews = [
     comment: "Good beans, a bit loud on weekends.",
     beans: null,
     ratings: { vibe: 3.5 },
-    photo_path: null,
+    photos: [],
     created_at: new Date(2026, 9, 13, 9, 0).toISOString(),
     drinks: [{ drink_id: 2, name: "Flat white", rating: 4, milk: null, price_aud: 5.5 }],
   }),

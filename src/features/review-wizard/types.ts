@@ -18,8 +18,11 @@ export type DraftDrink = {
   priceAud: number | null;
 };
 
-/** A photo already resized on the phone, waiting to upload when the review is posted. */
-export type WizardPhoto = { uri: string; width: number; height: number };
+/**
+ * A photo already resized on the phone, waiting to upload when the review is posted. The thumbnail is
+ * a small copy for lists. Photos saved in a draft before thumbnails existed have none.
+ */
+export type WizardPhoto = { uri: string; width: number; height: number; thumbUri?: string };
 
 /** Everything the wizard collects. Null means "not chosen" or "didn't try". */
 export type WizardValues = {
@@ -33,7 +36,8 @@ export type WizardValues = {
   tagIds: number[];
   comment: string;
   beans: string;
-  photo: WizardPhoto | null;
+  /** Up to MAX_PHOTOS, the first is the cover. */
+  photos: WizardPhoto[];
 };
 
 export const WIZARD_STEPS = ["cafe", "drink", "rate", "extras", "comment", "details"] as const;
@@ -52,6 +56,6 @@ export function blankValues(reviewId: string, cafe: WizardCafe | null = null): W
     tagIds: [],
     comment: "",
     beans: "",
-    photo: null,
+    photos: [],
   };
 }

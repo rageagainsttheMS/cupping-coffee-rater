@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 delete from auth.users;
 delete from public.cafes;
 
-select plan(21);
+select plan(25);
 
 -- Fixtures. The cafe sits at (144.9780, -37.8000).
 insert into auth.users (id, email)
@@ -98,14 +98,40 @@ select throws_ok(
   '22023', 'invalid_location', 'a latitude without a longitude is rejected');
 select throws_ok(
   format($$select public.submit_review(gen_random_uuid(), %L, '[{"drink_id": 9, "rating": 4}]',
-    p_comment => 'Photo belongs to someone else.', p_photo_path => %L)$$,
+    p_comment => 'Photo belongs to someone else.', p_photos => jsonb_build_array(
+      jsonb_build_object('path', %L, 'width', 800, 'height', 600)))$$,
     pg_temp.cid(2), pg_temp.uid(1) || '/photo.jpg'),
   '22023', 'invalid_photo_path', 'a photo path outside the user''s own folder is rejected');
-select lives_ok(
+select throws_ok(
   format($$select public.submit_review(gen_random_uuid(), %L, '[{"drink_id": 9, "rating": 4}]',
-    p_comment => 'Photo in my own folder.', p_photo_path => %L, p_photo_width => 800, p_photo_height => 600)$$,
-    pg_temp.cid(3), pg_temp.uid(6) || '/photo.jpg'),
-  'a photo path in the user''s own folder is accepted');
+    p_comment => 'Thumbnail belongs to someone else.', p_photos => jsonb_build_array(
+      jsonb_build_object('path', %L, 'thumb_path', %L, 'width', 800, 'height', 600)))$$,
+    pg_temp.cid(2), pg_temp.uid(6) || '/a.jpg', pg_temp.uid(1) || '/a_t.jpg'),
+  '22023', 'invalid_photo_path', 'a thumbnail path outside the user''s own folder is rejected');
+select throws_ok(
+  format($$select public.submit_review(gen_random_uuid(), %L, '[{"drink_id": 9, "rating": 4}]',
+    p_comment => 'One photo too many.', p_photos => (
+      select jsonb_agg(jsonb_build_object('path', %L || '/p' || g || '.jpg', 'width', 800, 'height', 600))
+      from generate_series(1, 4) g))$$,
+    pg_temp.cid(2), pg_temp.uid(6)),
+  '22023', 'invalid_photos', 'more than three photos are rejected');
+select throws_ok(
+  format($$select public.submit_review(gen_random_uuid(), %L, '[{"drink_id": 9, "rating": 4}]',
+    p_comment => 'Photos not a list.', p_photos => '{"path": "x"}'::jsonb)$$, pg_temp.cid(2)),
+  '22023', 'invalid_photos', 'photos must be a list');
+select lives_ok(
+  format($$select public.submit_review('30000000-0000-4000-8000-000000000001', %L, '[{"drink_id": 9, "rating": 4}]',
+    p_comment => 'Three photos in my own folder.', p_photos => (
+      select jsonb_agg(jsonb_build_object('path', %L || '/r_' || g || '.jpg',
+                                          'thumb_path', %L || '/r_' || g || '_t.jpg',
+                                          'width', 800, 'height', 600) order by g)
+      from generate_series(1, 3) g))$$,
+    pg_temp.cid(3), pg_temp.uid(6), pg_temp.uid(6)),
+  'up to three photos in the user''s own folder are accepted');
+select is(
+  (select string_agg(position || ':' || right(storage_path, 7), ',' order by position)
+   from public.review_photos where review_id = '30000000-0000-4000-8000-000000000001'),
+  '0:r_1.jpg,1:r_2.jpg,2:r_3.jpg', 'the photos are stored in the order they were sent');
 
 -- Same-day duplicate through the function (TDD rule 7).
 select throws_ok(

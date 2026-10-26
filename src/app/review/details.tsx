@@ -1,16 +1,18 @@
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { Button } from "@/components/Button";
 import { CircleButton } from "@/components/CircleButton";
 import { Text } from "@/components/Text";
+import { MAX_PHOTOS } from "@/domain/review.schema";
 import { useCafeDetail } from "@/features/cafe/useCafeDetail";
 import { formatPrice } from "@/features/cafe/format";
 import { copy } from "@/lib/copy/en";
 import { fonts, radius, spacing } from "@/lib/theme/tokens";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import type { SubmitErrorKind } from "@/features/review-wizard/errors";
-import { pickPhoto } from "@/features/review-wizard/photo";
+import { pickPhotos } from "@/features/review-wizard/photo";
 import { stepPrice } from "@/features/review-wizard/price";
 import { useWizard } from "@/features/review-wizard/ReviewWizardProvider";
 import { useSubmitReview } from "@/features/review-wizard/useSubmitReview";
@@ -35,17 +37,17 @@ function errorText(kind: SubmitErrorKind, cafeName: string) {
 /** Step 6. Price, beans and a photo, all optional, then post. */
 export default function DetailsStep() {
   const { colors } = useTheme();
-  const { values, drinks, patchDrink, setBeans, setPhoto } = useWizard();
+  const { values, drinks, patchDrink, setBeans, addPhotos, removePhoto } = useWizard();
   const detail = useCafeDetail(values.cafe?.id);
   const { submit, isPending, error, clearError } = useSubmitReview();
   const [photoProblem, setPhotoProblem] = useState<"denied" | "failed" | null>(null);
   const cafeName = values.cafe?.name ?? "";
   const strings = copy.review.details;
 
-  const choosePhoto = async (source: "camera" | "library") => {
+  const choosePhotos = async (source: "camera" | "library") => {
     setPhotoProblem(null);
-    const result = await pickPhoto(source);
-    if (result.status === "ok") setPhoto(result.photo);
+    const result = await pickPhotos(source, MAX_PHOTOS - values.photos.length);
+    if (result.status === "ok") addPhotos(result.photos);
     if (result.status === "denied" || result.status === "failed") setPhotoProblem(result.status);
   };
 
@@ -143,38 +145,71 @@ export default function DetailsStep() {
       </View>
 
       <View style={{ gap: spacing.sm }}>
-        <Text variant="heading">{strings.photo}</Text>
-        {values.photo ? (
-          <View style={{ gap: spacing.sm }}>
-            <Image
-              source={{ uri: values.photo.uri }}
-              accessibilityLabel={strings.photoPreview}
-              contentFit="cover"
-              style={{ height: 200, borderRadius: radius.lg }}
-            />
-            <Button
-              label={strings.removePhoto}
-              variant="secondary"
-              onPress={() => setPhoto(null)}
-            />
+        <View
+          style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <Text variant="heading">{strings.photos}</Text>
+          <Text variant="caption" muted>
+            {strings.photoCount(values.photos.length, MAX_PHOTOS)}
+          </Text>
+        </View>
+        {values.photos.length > 0 ? (
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            {values.photos.map((photo, index) => (
+              <View key={photo.uri} style={{ flex: 1, aspectRatio: 1 }}>
+                <Image
+                  source={{ uri: photo.thumbUri ?? photo.uri }}
+                  accessibilityLabel={strings.photoPreview(index + 1)}
+                  contentFit="cover"
+                  style={{ flex: 1, borderRadius: radius.md }}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.removePhoto(index + 1)}
+                  onPress={() => removePhoto(index)}
+                  hitSlop={8}
+                  style={{
+                    position: "absolute",
+                    top: spacing.xs,
+                    right: spacing.xs,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(0,0,0,0.6)",
+                  }}
+                >
+                  <MaterialCommunityIcons name="close" size={18} color="#fff" />
+                </Pressable>
+              </View>
+            ))}
+            {Array.from({ length: MAX_PHOTOS - values.photos.length }, (_, i) => (
+              <View key={`empty-${i}`} style={{ flex: 1, aspectRatio: 1 }} />
+            ))}
           </View>
-        ) : (
+        ) : null}
+        {values.photos.length < MAX_PHOTOS ? (
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             <View style={{ flex: 1 }}>
               <Button
                 label={strings.takePhoto}
                 variant="secondary"
-                onPress={() => void choosePhoto("camera")}
+                onPress={() => void choosePhotos("camera")}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Button
                 label={strings.choosePhoto}
                 variant="secondary"
-                onPress={() => void choosePhoto("library")}
+                onPress={() => void choosePhotos("library")}
               />
             </View>
           </View>
+        ) : (
+          <Text variant="caption" muted>
+            {strings.photosFull(MAX_PHOTOS)}
+          </Text>
         )}
         {photoProblem ? (
           <Text variant="label" color={colors.danger}>

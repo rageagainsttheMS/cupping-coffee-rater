@@ -77,9 +77,7 @@ const review: CafeReview = {
   drinks: [{ drink_id: 9, name: "Flat white", rating: 4.5, milk: null, price_aud: null }],
   ratings: {},
   tags: [],
-  photo_path: null,
-  photo_width: null,
-  photo_height: null,
+  photos: [],
 };
 
 describe("ReviewCard menu", () => {

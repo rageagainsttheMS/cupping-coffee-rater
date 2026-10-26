@@ -34,7 +34,7 @@ export function reviewToValues(review: MyReview): WizardValues {
     tagIds: review.tags.map((t) => t.tag_id),
     comment: review.comment,
     beans: review.beans ?? "",
-    photo: null,
+    photos: [],
   };
 }
 

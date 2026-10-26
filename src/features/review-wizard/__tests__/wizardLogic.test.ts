@@ -91,6 +91,29 @@ describe("draft save and restore", () => {
     expect(draft?.values.tagIds).toEqual([1, 3]);
   });
 
+  it("keeps the photos, with thumbnails, in order", async () => {
+    const storage = memoryStorage();
+    const photos = [
+      { uri: "file:///a.jpg", width: 800, height: 600, thumbUri: "file:///a_t.jpg" },
+      { uri: "file:///b.jpg", width: 600, height: 800 },
+    ];
+    await saveDraft(storage, { values: filled({ photos }), step: "details", drinkIndex: 0 }, NOW);
+    expect((await loadDraft(storage, TAGS, NOW))?.values.photos).toEqual(photos);
+  });
+
+  it("loads a draft saved with the old single photo as a one-photo list", async () => {
+    const storage = memoryStorage();
+    await saveDraft(storage, { values: filled(), step: "details", drinkIndex: 0 }, NOW);
+    const saved = JSON.parse((await storage.getItem(DRAFT_KEY)) as string);
+    delete saved.values.photos;
+    saved.values.photo = { uri: "file:///old.jpg", width: 800, height: 600 };
+    await storage.setItem(DRAFT_KEY, JSON.stringify(saved));
+
+    const draft = await loadDraft(storage, TAGS, NOW);
+    expect(draft?.values.photos).toEqual([{ uri: "file:///old.jpg", width: 800, height: 600 }]);
+    expect(draft?.values).not.toHaveProperty("photo");
+  });
+
   it("ignores unreadable or foreign data instead of crashing", async () => {
     expect(await loadDraft(memoryStorage({ [DRAFT_KEY]: "{not json" }), TAGS, NOW)).toBeNull();
     expect(await loadDraft(memoryStorage({ [DRAFT_KEY]: '{"version":2}' }), TAGS, NOW)).toBeNull();
@@ -201,14 +224,20 @@ describe("building the review to post", () => {
 
     const full = buildReviewInput(filled({ beans: " Market Lane " }), TAGS, {
       location: { lat: -37.8, lng: 144.97 },
-      photo: { path: "u/r.jpg", width: 1200, height: 900 },
+      photos: [
+        { path: "u/r_0.jpg", thumbPath: "u/r_0_t.jpg", width: 1200, height: 900 },
+        { path: "u/r_1.jpg", width: 900, height: 1200 },
+      ],
     });
     expect(full.success).toBe(true);
     if (!full.success) return;
     const args = toSubmitArgs(full.data);
     expect(args).toMatchObject({
       p_beans: "Market Lane",
-      p_photo_path: "u/r.jpg",
+      p_photos: [
+        { path: "u/r_0.jpg", thumb_path: "u/r_0_t.jpg", width: 1200, height: 900 },
+        { path: "u/r_1.jpg", thumb_path: null, width: 900, height: 1200 },
+      ],
       p_lat: -37.8,
       p_lng: 144.97,
     });

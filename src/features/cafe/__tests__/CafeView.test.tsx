@@ -68,9 +68,7 @@ const review = (over: Partial<CafeReview> = {}): CafeReview => ({
   drinks: [{ drink_id: 1, name: "Magic", rating: 4.5, milk: null, price_aud: 5.8 }],
   ratings: { work: 5 },
   tags: [],
-  photo_path: null,
-  photo_width: null,
-  photo_height: null,
+  photos: [],
   ...over,
 });
 
@@ -280,5 +278,31 @@ describe("CafeView actions", () => {
   it("shows open status from the live details", async () => {
     await renderView({ google: { ...google(4.3), open_now: false } });
     expect(screen.getByText("Closed")).toBeTruthy();
+  });
+});
+
+describe("CafeView review photos", () => {
+  const photo = (n: number) => ({
+    path: `u/r_${n}.jpg`,
+    thumb_path: `u/r_${n}_t.jpg`,
+    width: 800,
+    height: 600,
+  });
+
+  it("shows one tile per photo on a review and opens the viewer on the one tapped", async () => {
+    const reviews = [review({ photos: [photo(0), photo(1), photo(2)] })];
+    await renderView({ useReviews: jest.fn(() => result({ reviews })) as never });
+
+    await fireEvent.press(screen.getByLabelText("Photo 2 of 3. Open full screen"));
+
+    // The viewer starts on the second photo and says where it is.
+    expect(screen.getByText("2 of 3")).toBeTruthy();
+  });
+
+  it("shows no position counter for a single photo", async () => {
+    const reviews = [review({ photos: [photo(0)] })];
+    await renderView({ useReviews: jest.fn(() => result({ reviews })) as never });
+    await fireEvent.press(screen.getByLabelText("Photo 1 of 1. Open full screen"));
+    expect(screen.queryByText(/ of /)).toBeNull();
   });
 });

@@ -120,17 +120,76 @@ describe("postReview", () => {
 
   it("uploads the photo to the person's folder before posting", async () => {
     rpc.mockResolvedValue({ data: RESULT, error: null });
-    await postReview({ values: filled({ photo: PHOTO }), tags: TAGS, userId: USER });
-    expect(mockUpload).toHaveBeenCalledWith(`${USER}/${REVIEW_ID}.jpg`, expect.any(ArrayBuffer), {
+    await postReview({ values: filled({ photos: [PHOTO] }), tags: TAGS, userId: USER });
+    expect(mockUpload).toHaveBeenCalledWith(`${USER}/${REVIEW_ID}_0.jpg`, expect.any(ArrayBuffer), {
       contentType: "image/jpeg",
       upsert: true,
     });
   });
 
+  it("uploads every photo and its thumbnail, and sends them in order", async () => {
+    rpc.mockResolvedValue({ data: RESULT, error: null });
+    const photos = [
+      { ...PHOTO, thumbUri: "file:///t0.jpg" },
+      { uri: "file:///b.jpg", width: 1600, height: 900, thumbUri: "file:///t1.jpg" },
+      { uri: "file:///c.jpg", width: 900, height: 1600 },
+    ];
+    await postReview({ values: filled({ photos }), tags: TAGS, userId: USER });
+    const uploaded = mockUpload.mock.calls.map((c) => c[0]).sort();
+    expect(uploaded).toEqual(
+      [
+        `${USER}/${REVIEW_ID}_0.jpg`,
+        `${USER}/${REVIEW_ID}_0_t.jpg`,
+        `${USER}/${REVIEW_ID}_1.jpg`,
+        `${USER}/${REVIEW_ID}_1_t.jpg`,
+        `${USER}/${REVIEW_ID}_2.jpg`,
+      ].sort(),
+    );
+    expect(rpc.mock.calls[0][1].p_photos).toEqual([
+      {
+        path: `${USER}/${REVIEW_ID}_0.jpg`,
+        thumb_path: `${USER}/${REVIEW_ID}_0_t.jpg`,
+        width: 800,
+        height: 600,
+      },
+      {
+        path: `${USER}/${REVIEW_ID}_1.jpg`,
+        thumb_path: `${USER}/${REVIEW_ID}_1_t.jpg`,
+        width: 1600,
+        height: 900,
+      },
+      { path: `${USER}/${REVIEW_ID}_2.jpg`, thumb_path: null, width: 900, height: 1600 },
+    ]);
+  });
+
+  it("deletes every file when one upload fails, and does not post", async () => {
+    mockUpload
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: new Error("bucket full") })
+      .mockResolvedValue({ error: null });
+    const photos = [PHOTO, { ...PHOTO, uri: "file:///b.jpg" }];
+    await expect(
+      postReview({ values: filled({ photos }), tags: TAGS, userId: USER }),
+    ).rejects.toBeInstanceOf(PhotoUploadError);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mockRemove).toHaveBeenCalledWith([
+      `${USER}/${REVIEW_ID}_0.jpg`,
+      `${USER}/${REVIEW_ID}_1.jpg`,
+    ]);
+  });
+
+  it("rejects more than three photos before uploading", async () => {
+    const photos = [PHOTO, PHOTO, PHOTO, PHOTO];
+    await expect(
+      postReview({ values: filled({ photos }), tags: TAGS, userId: USER }),
+    ).rejects.toBeInstanceOf(InvalidReviewError);
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
   it("reports a failed upload as a photo problem and does not post", async () => {
     mockUpload.mockResolvedValue({ error: new Error("bucket full") });
     await expect(
-      postReview({ values: filled({ photo: PHOTO }), tags: TAGS, userId: USER }),
+      postReview({ values: filled({ photos: [PHOTO] }), tags: TAGS, userId: USER }),
     ).rejects.toBeInstanceOf(PhotoUploadError);
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -139,9 +198,9 @@ describe("postReview", () => {
     const failure = { code: "23505", message: "duplicate" };
     rpc.mockResolvedValue({ data: null, error: failure });
     await expect(
-      postReview({ values: filled({ photo: PHOTO }), tags: TAGS, userId: USER }),
+      postReview({ values: filled({ photos: [PHOTO] }), tags: TAGS, userId: USER }),
     ).rejects.toBe(failure);
-    expect(mockRemove).toHaveBeenCalledWith([`${USER}/${REVIEW_ID}.jpg`]);
+    expect(mockRemove).toHaveBeenCalledWith([`${USER}/${REVIEW_ID}_0.jpg`]);
   });
 
   it("still rethrows the original error if cleaning up the photo fails", async () => {
@@ -149,14 +208,14 @@ describe("postReview", () => {
     rpc.mockResolvedValue({ data: null, error: failure });
     mockRemove.mockRejectedValue(new Error("offline"));
     await expect(
-      postReview({ values: filled({ photo: PHOTO }), tags: TAGS, userId: USER }),
+      postReview({ values: filled({ photos: [PHOTO] }), tags: TAGS, userId: USER }),
     ).rejects.toBe(failure);
   });
 
   it("leaves the photo and details out for 'Skip and post'", async () => {
     rpc.mockResolvedValue({ data: RESULT, error: null });
     await postReview({
-      values: filled({ photo: PHOTO, beans: "Market Lane" }),
+      values: filled({ photos: [PHOTO], beans: "Market Lane" }),
       tags: TAGS,
       userId: USER,
       withoutDetails: true,

@@ -25,10 +25,23 @@ describe("reviewSchema", () => {
       work: 5,
       tagIds: [3, 12],
       beans: "Market Lane seasonal blend",
-      photo: { path: "user/review.jpg", width: 1200, height: 1600 },
+      photos: [
+        { path: "user/review_0.jpg", thumbPath: "user/review_0_t.jpg", width: 1200, height: 1600 },
+        { path: "user/review_1.jpg", width: 1600, height: 1200 },
+      ],
       location: { lat: -37.8, lng: 144.97 },
     });
     expect(result.success).toBe(true);
+  });
+
+  it("allows at most three photos", () => {
+    const photo = (n: number) => ({ path: `user/review_${n}.jpg`, width: 800, height: 600 });
+    const withPhotos = (count: number) => ({
+      ...valid,
+      photos: Array.from({ length: count }, (_, n) => photo(n)),
+    });
+    expect(reviewSchema.safeParse(withPhotos(3)).success).toBe(true);
+    expect(reviewSchema.safeParse(withPhotos(4)).success).toBe(false);
   });
 
   it("rejects a draft with no coffee rating", () => {

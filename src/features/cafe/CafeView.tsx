@@ -55,7 +55,7 @@ export function CafeView({
   const { colors } = useTheme();
   const [metric, setMetric] = useState<Metric>(initialMetric);
   const [chosenDrinkId, setDrinkId] = useState<number | null>(null);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<{ paths: string[]; index: number } | null>(null);
   // Drinks only matter for Coffee. In other modes What to order is hidden and its filter not applied.
   const drinkId = metric === "coffee" ? chosenDrinkId : null;
   const reviews = useReviews(detail.cafe.id, metric, drinkId);
@@ -83,7 +83,10 @@ export function CafeView({
             onPress={onToggleSave}
           />
         </View>
-        <PhotoGrid photos={photos} onOpen={setViewing} />
+        <PhotoGrid
+          photos={photos}
+          onOpen={(index) => setViewing({ paths: photos.map((p) => p.path), index })}
+        />
       </View>
 
       <View style={{ gap: spacing.xs }}>
@@ -144,7 +147,7 @@ export function CafeView({
             review={item}
             metric={metric}
             drinkId={drinkId}
-            onOpenPhoto={setViewing}
+            onOpenPhoto={(paths, index) => setViewing({ paths, index })}
             onMenu={
               onReviewMenu && item.user_id !== currentUserId ? () => onReviewMenu(item) : undefined
             }
@@ -175,7 +178,11 @@ export function CafeView({
         </View>
       </View>
 
-      <PhotoViewer path={viewing} onClose={() => setViewing(null)} />
+      <PhotoViewer
+        paths={viewing?.paths ?? []}
+        startIndex={viewing?.index ?? 0}
+        onClose={() => setViewing(null)}
+      />
     </View>
   );
 }

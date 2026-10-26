@@ -17,12 +17,18 @@ export function useCafePhotos(cafeId: string | undefined) {
     queryFn: async (): Promise<CafePhoto[]> => {
       const { data, error } = await supabase
         .from("review_photos")
-        .select("storage_path, width, height, reviews!inner(cafe_id, created_at)")
+        .select("storage_path, thumb_path, width, height, reviews!inner(cafe_id, created_at)")
         .eq("reviews.cafe_id", cafeId as string)
         .order("created_at", { referencedTable: "reviews", ascending: false })
+        .order("position", { ascending: true })
         .limit(PHOTO_GRID_COUNT);
       if (error) throw error;
-      return data.map((row) => ({ path: row.storage_path, width: row.width, height: row.height }));
+      return data.map((row) => ({
+        path: row.storage_path,
+        thumb_path: row.thumb_path,
+        width: row.width,
+        height: row.height,
+      }));
     },
   });
 }

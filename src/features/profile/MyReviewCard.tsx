@@ -119,11 +119,29 @@ export function MyReviewCard({ review, now, onOpenCafe, onOpenMenu }: Props) {
           </View>
           <Text>{review.comment}</Text>
         </View>
-        {review.photo_path ? (
-          <SignedImage
-            path={review.photo_path}
-            style={{ width: 80, height: 80, borderRadius: radius.md }}
-          />
+        {review.photos.length > 0 ? (
+          <View>
+            <SignedImage
+              path={review.photos[0].thumb_path ?? review.photos[0].path}
+              style={{ width: 80, height: 80, borderRadius: radius.md }}
+            />
+            {review.photos.length > 1 ? (
+              <View
+                style={{
+                  position: "absolute",
+                  right: spacing.xs,
+                  bottom: spacing.xs,
+                  paddingHorizontal: spacing.xs,
+                  borderRadius: radius.pill,
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                }}
+              >
+                <Text variant="caption" color="#fff">
+                  {"+" + (review.photos.length - 1)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         ) : null}
       </View>
 

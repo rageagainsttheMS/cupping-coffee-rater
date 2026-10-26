@@ -15,6 +15,7 @@ import { Alert, AppState } from "react-native";
 import { useForm, useWatch } from "react-hook-form";
 import type { OptionalMetric } from "@/domain/metrics";
 import { wizardDrinks } from "@/domain/reference";
+import { MAX_PHOTOS } from "@/domain/review.schema";
 import type { MyReview } from "@/features/profile/types";
 import { useMyReviews } from "@/features/profile/useMyReviews";
 import { copy } from "@/lib/copy/en";
@@ -59,7 +60,9 @@ type WizardContextValue = {
   toggleTag: (tagId: number) => void;
   setComment: (comment: string) => void;
   setBeans: (beans: string) => void;
-  setPhoto: (photo: WizardPhoto | null) => void;
+  /** Adds photos after the ones already chosen, up to the cap. */
+  addPhotos: (photos: WizardPhoto[]) => void;
+  removePhoto: (index: number) => void;
 
   goTo: (step: WizardStep, drinkIndex?: number) => void;
   goNext: (from: WizardStep) => void;
@@ -230,7 +233,10 @@ function WizardProvider({ children, edit }: { children: ReactNode; edit: MyRevie
       },
       setComment: (comment: string) => update({ comment }),
       setBeans: (beans: string) => update({ beans }),
-      setPhoto: (photo: WizardPhoto | null) => update({ photo }),
+      addPhotos: (photos: WizardPhoto[]) =>
+        update({ photos: [...current().photos, ...photos].slice(0, MAX_PHOTOS) }),
+      removePhoto: (index: number) =>
+        update({ photos: current().photos.filter((_, i) => i !== index) }),
       goTo,
       goNext: (from: WizardStep) => {
         if (editInitialRef.current) {

@@ -1,5 +1,13 @@
 import { Image } from "expo-image";
-import { ActivityIndicator, Modal, Pressable, View } from "react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Pressable,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { CircleButton } from "@/components/CircleButton";
 import { MetricIcon } from "@/components/MetricIcon";
 import { Text } from "@/components/Text";
@@ -37,7 +45,7 @@ export function SignedImage({ path, fit = "cover", style }: SignedImageProps) {
 
 const GRID_HEIGHT = 200;
 
-type GridProps = { photos: readonly CafePhoto[]; onOpen: (path: string) => void };
+type GridProps = { photos: readonly CafePhoto[]; onOpen: (index: number) => void };
 
 /** The newest photo large on the left, the next two stacked on the right. A placeholder when none. */
 export function PhotoGrid({ photos, onOpen }: GridProps) {
@@ -69,10 +77,14 @@ export function PhotoGrid({ photos, onOpen }: GridProps) {
       key={photo.path}
       accessibilityRole="imagebutton"
       accessibilityLabel={copy.cafe.photoLabel(index + 1, photos.length)}
-      onPress={() => onOpen(photo.path)}
+      onPress={() => onOpen(index)}
       style={{ flex: 1 }}
     >
-      <SignedImage path={photo.path} style={{ flex: 1, borderRadius: radius.md }} />
+      {/* The big cover tile uses the full image. The small ones use the thumbnail. */}
+      <SignedImage
+        path={index === 0 ? photo.path : (photo.thumb_path ?? photo.path)}
+        style={{ flex: 1, borderRadius: radius.md }}
+      />
     </Pressable>
   );
 
@@ -88,21 +100,78 @@ export function PhotoGrid({ photos, onOpen }: GridProps) {
   );
 }
 
-/** One photo, full screen, on black. Tap anywhere or the close button to leave. */
-export function PhotoViewer({ path, onClose }: { path: string | null; onClose: () => void }) {
+/** Full screen, on black. Swipe between photos; tap a photo or the close button to leave. */
+export function PhotoViewer({
+  paths,
+  startIndex,
+  onClose,
+}: {
+  paths: readonly string[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const visible = paths.length > 0;
   return (
-    <Modal visible={path !== null} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={copy.cafe.closePhoto}
-        onPress={onClose}
-        style={{ flex: 1, backgroundColor: "#000", justifyContent: "center" }}
-      >
-        {path ? <SignedImage path={path} fit="contain" style={{ flex: 1 }} /> : null}
-        <View style={{ position: "absolute", top: spacing.xxl + spacing.lg, right: spacing.lg }}>
-          <CircleButton icon="close" accessibilityLabel={copy.cafe.closePhoto} onPress={onClose} />
-        </View>
-      </Pressable>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* Mounted only while open, so each opening starts on the photo that was tapped. */}
+      {visible ? <ViewerPages paths={paths} startIndex={startIndex} onClose={onClose} /> : null}
     </Modal>
+  );
+}
+
+function ViewerPages({
+  paths,
+  startIndex,
+  onClose,
+}: {
+  paths: readonly string[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const { width } = useWindowDimensions();
+  const first = Math.min(startIndex, paths.length - 1);
+  const [index, setIndex] = useState(first);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center" }}>
+      <FlatList
+        data={paths}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(path) => path}
+        initialScrollIndex={first}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+        onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+        renderItem={({ item }) => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.cafe.closePhoto}
+            onPress={onClose}
+            style={{ width, justifyContent: "center" }}
+          >
+            <SignedImage path={item} fit="contain" style={{ flex: 1 }} />
+          </Pressable>
+        )}
+      />
+      <View style={{ position: "absolute", top: spacing.xxl + spacing.lg, right: spacing.lg }}>
+        <CircleButton icon="close" accessibilityLabel={copy.cafe.closePhoto} onPress={onClose} />
+      </View>
+      {paths.length > 1 ? (
+        <View
+          style={{
+            position: "absolute",
+            bottom: spacing.xxl,
+            left: 0,
+            right: 0,
+            alignItems: "center",
+          }}
+        >
+          <Text variant="label" color="#fff">
+            {copy.cafe.photoPosition(index + 1, paths.length)}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
