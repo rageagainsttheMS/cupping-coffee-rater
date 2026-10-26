@@ -1028,9 +1028,9 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
   by looking at how many unrated cafes people actually open.
 - **Decision record.** Write the outcome in `decisions.md`, with the cost estimate.
 
-### Multiple photos per review (future)
+### Multiple photos per review (done)
 
-**Built 26 Oct 2026** (migration `20261026110000_multiple_photos.sql`): up to 3 photos per review, each with a 480 px thumbnail made on the phone (`review_photos.position` and `thumb_path`, `submit_review(p_photos)`, a `photos` list on `cafe_reviews` and `my_reviews`). The wizard, cafe page and My reviews layouts were designed in code with no mock-up, and the Technical Solution Design and Product Design Ideas documents still say "one photo" and need updating. The text below is the original plan. Phase 1 allowed **one photo per review** (`review_photos` is keyed on `review_id`), matching
+**Built and checked on the preview app, 26 Oct 2026** (migration `20261026110000_multiple_photos.sql`): up to 3 photos per review, each with a 480 px thumbnail made on the phone (`review_photos.position` and `thumb_path`, `submit_review(p_photos)`, a `photos` list on `cafe_reviews` and `my_reviews`). The wizard, cafe page and My reviews layouts were designed in code with no mock-up, and the Technical Solution Design and Product Design Ideas documents still say "one photo" and need updating. The text below is the original plan. Phase 1 allowed **one photo per review** (`review_photos` is keyed on `review_id`), matching
 the design doc's "one photo to start". Raised during M7 testing. Rough size: a migration plus about a
 dozen files, with no new dev build needed (the image picker already supports multiple selection).
 
@@ -1061,8 +1061,7 @@ dozen files, with no new dev build needed (the image picker already supports mul
 - **Docs.** Update "one photo in Phase 1" in the data model above, the Technical Solution Design and the
   Product Design Ideas document.
 
-**Decide first:** whether it earns its place yet. A single photo is enough for a beta, so wait until
-reviewers ask for more.
+**Local env files.** The local Supabase address lives in `.env.development.local`, not `.env.local`. Expo reads `.env.local` during `eas update`, which once baked `http://192.168...` into a preview update. Publish with `eas update --channel preview --environment preview --platform android`, then check that `dist/` has the hosted project ref and no `192.168`.
 
 ### Moderation and account banning inside the app
 
