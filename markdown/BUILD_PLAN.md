@@ -838,6 +838,8 @@ Google's terms allow caching coordinates for at most 30 days (see `markdown/deci
 
 - Add a scheduled refresh (Supabase cron + `places-details`, or a small `refresh-cafes` function) that re-fetches lat/lng for `cafes` rows with `refreshed_at` older than 25 days, and updates `refreshed_at`. Refresh Place IDs older than 12 months with an ID-only Place Details request (free).
 - Cap each run so a backlog can't blow the Places budget, and log how many rows were refreshed.
+- **Implemented** as the `refresh-cafes` function plus a daily `pg_cron` job (migration `20261026100000_refresh_cafes.sql`), capped at 200 Places calls a run. To switch it on for a project: `npx supabase functions deploy refresh-cafes`, `npx supabase secrets set CRON_SECRET=<random>`, then in the SQL editor `select vault.create_secret('https://<ref>.supabase.co', 'project_url'); select vault.create_secret('<same random value>', 'cron_secret');`. Until both Vault secrets exist the job does nothing. The run's counts are in the function logs (`refresh-cafes {...}`).
+- Known gap: a place Google can no longer find keeps its old coordinates past 30 days (the column is `not null`), so check the `not_found` count in the logs.
 - Test it: a row with an old `refreshed_at` is picked up, a recent one is left alone, and a failed lookup doesn't clear the existing coordinates early.
 
 ### 11.3 CI/CD additions

@@ -90,5 +90,35 @@ export function createCafeStore(db: SupabaseClient): CafeStore {
       });
       if (error) throw error;
     },
+
+    async findCafesToRefresh(refreshedBefore, limit) {
+      const { data, error } = await db
+        .from("cafes")
+        .select("id, google_place_id")
+        .lt("refreshed_at", refreshedBefore.toISOString())
+        .order("refreshed_at", { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      return data.map((r) => ({ id: r.id as string, googlePlaceId: r.google_place_id as string }));
+    },
+
+    async findPlaceIdsToCheck(checkedBefore, limit) {
+      const { data, error } = await db
+        .from("cafes")
+        .select("id, google_place_id")
+        .lt("place_id_checked_at", checkedBefore.toISOString())
+        .order("place_id_checked_at", { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      return data.map((r) => ({ id: r.id as string, googlePlaceId: r.google_place_id as string }));
+    },
+
+    async markPlaceIdChecked(cafeId, placeId) {
+      const { error } = await db.rpc("mark_place_id_checked", {
+        p_cafe_id: cafeId,
+        p_place_id: placeId,
+      });
+      if (error) throw error;
+    },
   };
 }

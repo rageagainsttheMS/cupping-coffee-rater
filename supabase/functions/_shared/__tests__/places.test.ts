@@ -252,3 +252,23 @@ describe("errors", () => {
     expect((failure as Error).message).not.toContain(KEY);
   });
 });
+
+describe("getPlaceId", () => {
+  it("asks for the id alone, which Google does not charge for", async () => {
+    const { client, fetchMock } = setup(reply(200, { id: "ChIJnew" }));
+    expect(await client.getPlaceId("ChIJold")).toBe("ChIJnew");
+    const [url, init] = fetchMock.mock.calls[0] as [string, any];
+    expect(url).toBe("https://places.googleapis.com/v1/places/ChIJold");
+    expect(init.headers["X-Goog-FieldMask"]).toBe("id");
+  });
+
+  it("returns null when the place no longer exists", async () => {
+    const { client } = setup(reply(404, {}));
+    expect(await client.getPlaceId("gone")).toBeNull();
+  });
+
+  it("throws a bare PlacesError when the response has no id", async () => {
+    const { client } = setup(reply(200, {}));
+    await expect(client.getPlaceId("x")).rejects.toBeInstanceOf(PlacesError);
+  });
+});

@@ -52,7 +52,12 @@ export interface PlacesClient {
   searchText(args: { query: string; near?: { lat: number; lng: number } }): Promise<PlaceCafe[]>;
   /** Null when Google no longer has the place. */
   getDetails(placeId: string): Promise<PlaceDetails | null>;
+  /** ID-only Place Details (free). The current ID for a place, or null when Google no longer has it. */
+  getPlaceId(placeId: string): Promise<string | null>;
 }
+
+/** A stored cafe picked for the scheduled refresh. */
+export type CafeToRefresh = { id: string; googlePlaceId: string };
 
 /** The only database access the functions need. Note there is no way to store ratings or hours. */
 export interface CafeStore {
@@ -67,4 +72,9 @@ export interface CafeStore {
   upsertCafes(cafes: PlaceCafe[]): Promise<StoredCafe[]>;
   findCafePlaceId(cafeId: string): Promise<string | null>;
   refreshCafe(cafeId: string, update: { name: string; lat: number; lng: number }): Promise<void>;
+  /** Cafes whose coordinates were last refreshed before the cutoff, oldest first. */
+  findCafesToRefresh(refreshedBefore: Date, limit: number): Promise<CafeToRefresh[]>;
+  /** Cafes whose Place ID was last checked before the cutoff, oldest first. */
+  findPlaceIdsToCheck(checkedBefore: Date, limit: number): Promise<CafeToRefresh[]>;
+  markPlaceIdChecked(cafeId: string, placeId: string): Promise<void>;
 }

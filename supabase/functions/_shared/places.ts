@@ -7,6 +7,8 @@ const DEFAULT_BASE_URL = "https://places.googleapis.com";
 // Field masks are what Google bills on, so each request asks only for what the app uses.
 export const SEARCH_FIELD_MASK =
   "places.id,places.displayName,places.location,places.addressComponents,places.primaryType";
+/** Asking for the ID alone is the free "IDs Only" SKU. */
+export const ID_ONLY_FIELD_MASK = "id";
 export const DETAILS_FIELD_MASK =
   "id,displayName,location,regularOpeningHours,currentOpeningHours,rating,userRatingCount,googleMapsUri";
 
@@ -48,6 +50,8 @@ const openingHoursSchema = z
     weekdayDescriptions: z.array(z.string()).optional(),
   })
   .optional();
+
+const idOnlySchema = z.object({ id: z.string().min(1) });
 
 const detailsSchema = z.object({
   displayName: z.object({ text: z.string() }).optional(),
@@ -179,6 +183,18 @@ export function createPlacesClient({
         ratingCount: d.userRatingCount ?? null,
         mapsUri: d.googleMapsUri ?? null,
       };
+    },
+
+    async getPlaceId(placeId) {
+      const { status, json } = await request(
+        "GET",
+        `/v1/places/${encodeURIComponent(placeId)}`,
+        ID_ONLY_FIELD_MASK,
+      );
+      if (status === 404) return null;
+      const parsed = idOnlySchema.safeParse(json);
+      if (!parsed.success) throw new PlacesError(200);
+      return parsed.data.id;
     },
   };
 }
