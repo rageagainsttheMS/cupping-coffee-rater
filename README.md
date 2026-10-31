@@ -18,7 +18,7 @@ of its store release.
 - **Map of nearby cafes.** Pins cluster as you zoom out. Switch the map between Coffee, Food, Vibe and Work
   to rank cafes by the thing you care about. Swipe through cafe cards along the bottom.
 - **Cafe pages.** A score for each metric, the most common tags ("Smooth", "Great milk", "Power outlets"),
-  what to order, photos, live opening hours, and directions. Cafes with fewer than 3 ratings show "New"
+  what to order, photos, live opening hours, and directions. Cafes with no ratings show "New"
   and fall back to the Google rating.
 - **A six-step review wizard.** Pick the cafe (nearest first, with a "You're here" check), add one or
   more drinks, rate each one, then rate Food, Vibe and Work with tags. Finish with a comment, price and

@@ -14,7 +14,7 @@ One short entry per decision. Source: BUILD_PLAN.md, M0. Status is **Decided** u
 
 ### Displayed vs ranked score
 
-**Decided: one score for both.** The Bayesian, recency-weighted score is displayed and used to rank, so pins and order never disagree. Counts shown are raw counts. Scores are null below 3 ratings (shown as "New").
+**Decided: one score for both.** The Bayesian, recency-weighted score is displayed and used to rank, so pins and order never disagree. Counts shown are raw counts. Scores are null with no ratings (shown as "New"). Lowered from 3 to 1 on 31 Oct 2026.
 
 ### Verified-visit radius
 

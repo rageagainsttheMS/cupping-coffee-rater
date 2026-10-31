@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 delete from auth.users;
 delete from public.cafes;
 
-select plan(13);
+select plan(12);
 
 -- Fixtures: 45 users so every review in a cafe has a distinct author.
 insert into auth.users (id, email)
@@ -46,19 +46,18 @@ create function pg_temp.score(p_cafe int, p_metric public.metric) returns numeri
 create function pg_temp.cnt(p_cafe int, p_metric public.metric) returns bigint language sql as
   $$ select rating_count from public.cafe_scores where cafe_id = pg_temp.cid(p_cafe) and metric = p_metric $$;
 
--- Rule 1: 2 Coffee ratings show no score; 3 do.
+-- Rule 1: a score appears from the first Coffee rating.
 select pg_temp.add_review(1, 1, 0, 'flat_white', 4);
-select pg_temp.add_review(2, 1, 0, 'flat_white', 4);
-select is(pg_temp.score(1, 'coffee'), null, 'two Coffee ratings: no score');
-select is(pg_temp.cnt(1, 'coffee'), 2::bigint, 'two Coffee ratings: raw count still shown');
-select pg_temp.add_review(3, 1, 0, 'flat_white', 4);
-select isnt(pg_temp.score(1, 'coffee'), null, 'three Coffee ratings: score appears');
+select isnt(pg_temp.score(1, 'coffee'), null, 'one Coffee rating: score appears');
+select is(pg_temp.cnt(1, 'coffee'), 1::bigint, 'one Coffee rating: raw count is 1');
 
--- Rule 2: a single 5-star review does not outrank forty 4.5-star reviews,
--- and a few 5-star reviews are pulled toward the city average rather than showing 5.0.
+-- Rule 2: a single 5-star review is pulled toward the city average rather than showing 5.0,
+-- and forty 4.5-star reviews score close to 4.5.
+select pg_temp.add_review(2, 1, 0, 'flat_white', 4);
+select pg_temp.add_review(3, 1, 0, 'flat_white', 4);
 select pg_temp.add_review(g, 2, 0, 'flat_white', 4.5) from generate_series(1, 40) g;
 select pg_temp.add_review(1, 3, 0, 'flat_white', 5);
-select is(pg_temp.score(3, 'coffee'), null, 'one 5-star review has no score, so it cannot outrank forty 4.5s');
+select ok(pg_temp.score(3, 'coffee') < 5, 'one 5-star review is shrunk below 5.0');
 select ok(pg_temp.score(2, 'coffee') between 4.4 and 4.6, 'forty 4.5s score close to 4.5');
 select pg_temp.add_review(2, 3, 0, 'flat_white', 5);
 select pg_temp.add_review(3, 3, 0, 'flat_white', 5);

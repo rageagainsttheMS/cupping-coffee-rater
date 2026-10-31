@@ -13,7 +13,7 @@ export function isValidRating(rating: number): boolean {
   );
 }
 
-/** "4.2 (18)", or "New" while a metric has fewer than 3 ratings. */
+/** "4.2 (18)", or "New" while a metric has no ratings. */
 export function formatScore(score: number | null, count: number): string {
   if (score === null || count < MIN_RATINGS_FOR_SCORE) return copy.score.new;
   return `${score.toFixed(1)} (${count})`;

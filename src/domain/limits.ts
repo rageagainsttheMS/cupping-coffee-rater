@@ -4,7 +4,7 @@
  */
 
 /** A metric's score is hidden until it has this many ratings. SQL: `scoring_constants().min_count`. */
-export const MIN_RATINGS_FOR_SCORE = 3;
+export const MIN_RATINGS_FOR_SCORE = 1;
 
 /** Star ratings run from 1 to 5 in half-star steps. SQL: the check constraint on every rating column. */
 export const RATING_MIN = 1;

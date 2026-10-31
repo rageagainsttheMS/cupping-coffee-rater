@@ -11,13 +11,12 @@ describe("isValidRating", () => {
 });
 
 describe("formatScore", () => {
-  it("shows score and count from 3 ratings", () => {
+  it("shows score and count from the first rating", () => {
     expect(formatScore(4.2, 18)).toBe("4.2 (18)");
-    expect(formatScore(3.94, 3)).toBe("3.9 (3)");
+    expect(formatScore(3.94, 1)).toBe("3.9 (1)");
   });
 
-  it('shows "New" under 3 ratings', () => {
-    expect(formatScore(4.2, 2)).toBe("New");
+  it('shows "New" with no ratings', () => {
     expect(formatScore(null, 0)).toBe("New");
   });
 
