@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
 import { Button } from "@/components/Button";
 import { Text } from "@/components/Text";
 import { copy } from "@/lib/copy/en";
@@ -45,10 +37,8 @@ export function ReportSheet({ visible, busy, onSubmit, onCancel }: Props) {
       onRequestClose={close}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1, justifyContent: "flex-end" }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* A modal is its own window, which Android does not resize for the keyboard, so pad on both. */}
+      <KeyboardAvoidingView style={{ flex: 1, justifyContent: "flex-end" }} behavior="padding">
         <Pressable
           accessibilityLabel={text.cancel}
           onPress={close}
