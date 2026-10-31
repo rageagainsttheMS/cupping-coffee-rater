@@ -6,8 +6,11 @@ import { Text } from "./Text";
 
 type Props = Omit<PressableProps, "children"> & {
   label: string;
-  /** `dark` is the near-black button used for the main action on onboarding screens. */
-  variant?: "primary" | "dark" | "secondary" | "danger";
+  /**
+   * `dark` is the near-black button used for the main action on onboarding screens.
+   * `dangerOutline` is a destructive action that still needs a confirmation step.
+   */
+  variant?: "primary" | "dark" | "secondary" | "danger" | "dangerOutline";
   /** Shows a spinner and ignores presses, e.g. while a request is running. */
   busy?: boolean;
 };
@@ -28,7 +31,9 @@ export function Button({ label, variant = "primary", busy, disabled, style, ...r
       ? colors.onPrimary
       : variant === "dark"
         ? colors.background
-        : colors.text;
+        : variant === "dangerOutline"
+          ? colors.danger
+          : colors.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -43,8 +48,8 @@ export function Button({ label, variant = "primary", busy, disabled, style, ...r
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: background,
-          borderWidth: variant === "secondary" ? 1 : 0,
-          borderColor: colors.border,
+          borderWidth: variant === "secondary" || variant === "dangerOutline" ? 1 : 0,
+          borderColor: variant === "dangerOutline" ? colors.danger : colors.border,
           opacity: disabled ? 0.5 : state.pressed ? 0.85 : 1,
         },
         typeof style === "function" ? style(state) : style,

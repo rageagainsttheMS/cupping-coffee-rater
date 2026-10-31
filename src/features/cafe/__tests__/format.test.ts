@@ -55,10 +55,10 @@ describe("googleFallbackRating", () => {
 });
 
 describe("drinkScore", () => {
-  it("hides the score under 3 ratings", () => {
-    expect(drinkScore(drink({ score: 4.9, rating_count: 2 }))).toBeNull();
+  it("shows the score from the first rating", () => {
+    expect(drinkScore(drink({ score: 4.9, rating_count: 0 }))).toBeNull();
     expect(drinkScore(drink({ score: null, rating_count: 5 }))).toBeNull();
-    expect(drinkScore(drink({ score: 4.8, rating_count: 3 }))).toBe(4.8);
+    expect(drinkScore(drink({ score: 4.8, rating_count: 1 }))).toBe(4.8);
   });
 });
 

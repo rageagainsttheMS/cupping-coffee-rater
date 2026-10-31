@@ -1,12 +1,12 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Pressable, View } from "react-native";
 import { Text } from "@/components/Text";
-import { METRICS } from "@/domain/metrics";
 import { SignedImage } from "@/features/cafe/Photos";
+import { DrinkChips, RatingTiles } from "@/features/cafe/ReviewParts";
 import { copy } from "@/lib/copy/en";
 import { radius, spacing } from "@/lib/theme/tokens";
 import { useTheme } from "@/lib/theme/ThemeProvider";
-import { detailsLine, metricRating, relativeAge } from "./myReviews";
+import { detailsLine, relativeAge } from "./myReviews";
 import type { MyReview } from "./types";
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
 
 /** One of the person's reviews: the cafe, its four ratings, what they drank and what they said. */
 export function MyReviewCard({ review, now, onOpenCafe, onOpenMenu }: Props) {
-  const { colors, metrics } = useTheme();
+  const { colors } = useTheme();
   const where = [
     review.suburb,
     relativeAge(review.created_at, now),
@@ -64,59 +64,11 @@ export function MyReviewCard({ review, now, onOpenCafe, onOpenMenu }: Props) {
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: "row", gap: spacing.sm }}>
-        {METRICS.map((metric) => {
-          const rating = metricRating(review, metric);
-          const label = copy.metrics[metric].label;
-          const m = metrics[metric];
-          return (
-            <View
-              key={metric}
-              accessible
-              accessibilityLabel={
-                rating === null
-                  ? `${label}, ${copy.profile.myReviews.notRated}`
-                  : copy.cafe.reviews.ratingLabel(label, rating.toFixed(1))
-              }
-              style={{
-                flex: 1,
-                alignItems: "center",
-                paddingVertical: spacing.sm,
-                borderRadius: radius.md,
-                backgroundColor: rating === null ? colors.border : m.tint,
-                opacity: rating === null ? 0.6 : 1,
-              }}
-            >
-              <Text variant="bodyStrong" color={m.onTint}>
-                {rating === null ? copy.score.empty : rating.toFixed(1)}
-              </Text>
-              <Text variant="caption" color={m.onTint}>
-                {label}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
+      <RatingTiles review={review} />
 
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <View style={{ flex: 1, gap: spacing.sm }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-            {review.drinks.map((drink, index) => (
-              <View
-                key={`${drink.drink_id}-${index}`}
-                style={{
-                  paddingHorizontal: spacing.md,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.pill,
-                  backgroundColor: metrics.coffee.tint,
-                }}
-              >
-                <Text variant="label" color={metrics.coffee.onTint}>
-                  {drink.name}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <DrinkChips drinks={review.drinks} />
           <Text>{review.comment}</Text>
         </View>
         {review.photos.length > 0 ? (

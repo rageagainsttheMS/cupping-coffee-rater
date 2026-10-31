@@ -10,7 +10,17 @@ const BY_CODE: Record<string, string> = {
   weak_password: errors.weakPassword,
   over_request_rate_limit: errors.rateLimited,
   over_email_send_rate_limit: errors.rateLimited,
+  user_banned: errors.banned,
 };
+
+/** True when Supabase Auth refused because a moderator banned the account. */
+export function isBannedError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "user_banned"
+  );
+}
 
 function isNetworkFailure(error: { name?: unknown; message?: unknown; status?: unknown }): boolean {
   return (

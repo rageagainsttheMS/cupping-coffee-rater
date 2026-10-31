@@ -10,9 +10,10 @@ import { FormTextField } from "@/components/FormTextField";
 import { LinkText } from "@/components/LinkText";
 import { Text } from "@/components/Text";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { authErrorMessage } from "@/features/auth/authErrors";
+import { authErrorMessage, isBannedError } from "@/features/auth/authErrors";
 import { signInSchema } from "@/features/auth/schemas";
 import { SocialSignIn } from "@/features/auth/SocialSignIn";
+import { SuspendedNotice } from "@/features/auth/SuspendedNotice";
 import { copy } from "@/lib/copy/en";
 import { supabase } from "@/lib/supabase";
 import { spacing } from "@/lib/theme/tokens";
@@ -23,6 +24,7 @@ export default function SignInScreen() {
   const { linkError, setLinkError } = useAuth();
   const text = copy.auth.signIn;
   const [formError, setFormError] = useState<string | null>(null);
+  const [banned, setBanned] = useState(false);
 
   const {
     control,
@@ -36,9 +38,13 @@ export default function SignInScreen() {
   const submit = handleSubmit(async (values) => {
     setFormError(null);
     setLinkError(null);
+    setBanned(false);
     const { error } = await supabase.auth.signInWithPassword(values);
     // On success the session listener moves the app on, so there is nothing more to do here.
-    if (error) setFormError(authErrorMessage(error));
+    if (error) {
+      setBanned(isBannedError(error));
+      setFormError(authErrorMessage(error));
+    }
   });
 
   const message = formError ?? linkError;
@@ -48,7 +54,12 @@ export default function SignInScreen() {
       <AppLogo />
       <Text variant="display">{text.title}</Text>
       <Text muted>{text.subtitle}</Text>
-      <SocialSignIn onError={setFormError} />
+      <SocialSignIn
+        onError={(error) => {
+          setBanned(false);
+          setFormError(error);
+        }}
+      />
 
       <View style={{ gap: spacing.lg }}>
         <FormTextField
@@ -79,7 +90,9 @@ export default function SignInScreen() {
         </View>
       </View>
 
-      {message ? (
+      {banned ? (
+        <SuspendedNotice />
+      ) : message ? (
         <Text variant="label" color={colors.danger} accessibilityLiveRegion="polite">
           {message}
         </Text>

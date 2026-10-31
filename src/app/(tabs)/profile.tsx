@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Alert, Linking } from "react-native";
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useIsModerator, useModerationOpenCount } from "@/features/moderation/useModeration";
 import { ProfileView } from "@/features/profile/ProfileView";
 import { reviewStats } from "@/features/profile/myReviews";
 import { useLocationStatus } from "@/features/profile/useLocationStatus";
@@ -18,6 +19,8 @@ export default function ProfileScreen() {
   const locationStatus = useLocationStatus();
   const updateName = useUpdateDisplayName();
   const { preference } = useThemePreference();
+  const isModerator = useIsModerator().data === true;
+  const openCount = useModerationOpenCount(isModerator);
   const stats = reviews.data ? reviewStats(reviews.data) : null;
 
   return (
@@ -46,6 +49,8 @@ export default function ProfileScreen() {
         onOpenAccount={() => router.push("/account")}
         onOpenHelp={() => router.push("/help")}
         onSignOut={() => void signOut()}
+        onOpenModeration={isModerator ? () => router.push("/moderation") : undefined}
+        moderationOpenCount={openCount.data ?? null}
       />
     </Screen>
   );

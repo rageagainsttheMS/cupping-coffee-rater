@@ -51,6 +51,38 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"moderation_actions": {
+                  Row: {
+                    "action": Database["public"]['Enums']["moderation_action"],"created_at": string,"id": string,"moderator_id": string | null,"note": string | null,"review_id": string | null,"review_ids": (string)[],"target_user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": Database["public"]['Enums']["moderation_action"],"created_at"?: string,"id"?: string,"moderator_id"?: string | null,"note"?: string | null,"review_id"?: string | null,"review_ids"?: (string)[],"target_user_id"?: string | null
+                  }
+                  Update: {
+                    "action"?: Database["public"]['Enums']["moderation_action"],"created_at"?: string,"id"?: string,"moderator_id"?: string | null,"note"?: string | null,"review_id"?: string | null,"review_ids"?: (string)[],"target_user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "moderation_actions_moderator_id_fkey"
+      columns: ["moderator_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "moderation_actions_review_id_fkey"
+      columns: ["review_id"]
+isOneToOne: false
+      referencedRelation: "reviews"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "moderation_actions_target_user_id_fkey"
+      columns: ["target_user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"places_search_areas": {
                   Row: {
                     "center": unknown,"id": number,"radius_m": number,"result_count": number,"searched_at": string
@@ -125,7 +157,7 @@ isOneToOne: false
                   }
                   ComputedFields: never
                   Insert: {
-                    "height"?: number | null,"position": number,"review_id": string,"storage_path": string,"thumb_path"?: string | null,"width"?: number | null
+                    "height"?: number | null,"position"?: number,"review_id": string,"storage_path": string,"thumb_path"?: string | null,"width"?: number | null
                   }
                   Update: {
                     "height"?: number | null,"position"?: number,"review_id"?: string,"storage_path"?: string,"thumb_path"?: string | null,"width"?: number | null
@@ -387,7 +419,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "area_searched_since":
+            "apply_ban":
+{ Args: { "p_moderator_id": string,"p_note"?: string,"p_user_id": string }; Returns: number
+                           },
+"area_searched_since":
 { Args: { "p_lat": number,"p_lng": number,"p_radius_m": number,"p_since": string }; Returns: boolean
                            },
 "cafe_detail":
@@ -406,8 +441,39 @@ isOneToOne: false
 "count_cafes_in_box":
 { Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number }; Returns: number
                            },
+"is_moderator":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"lift_ban":
+{ Args: { "p_moderator_id": string,"p_note"?: string,"p_user_id": string }; Returns: number
+                           },
 "log_area_search":
 { Args: { "p_lat": number,"p_lng": number,"p_radius_m": number,"p_result_count": number }; Returns: undefined
+                           },
+"mark_place_id_checked":
+{ Args: { "p_cafe_id": string,"p_place_id": string }; Returns: undefined
+                           },
+"max_review_photos":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"moderate_review":
+{ Args: { "p_action": Database["public"]['Enums']["moderation_action"],"p_note"?: string,"p_review_id": string }; Returns: undefined
+                           },
+"moderation_banned_users":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "banned_at": string,"display_name": string,"hidden_count": number,"note": string,"user_id": string
+            }[]
+                           },
+"moderation_open_count":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"moderation_queue":
+{ Args: { "p_status"?: string }; Returns: {
+              "author_name": string,"cafe_id": string,"cafe_name": string,"comment": string,"created_at": string,"drinks": Json,"hidden_at": string,"oldest_report_at": string,"photos": Json,"ratings": Json,"reasons": (string)[],"report_count": number,"review_id": string,"suburb": string,"user_id": string
+            }[]
+                           },
+"moderation_review":
+{ Args: { "p_review_id": string }; Returns: Json
                            },
 "my_reviews":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -419,12 +485,6 @@ isOneToOne: false
               "coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"id": string,"last_drink_name": string,"last_rating": number,"lat": number,"lng": number,"name": string,"saved_at": string,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
             }[]
                            },
-"max_review_photos":
-{ Args: Record<PropertyKey, never>; Returns: number
-                           },
-"mark_place_id_checked":
-{ Args: { "p_cafe_id": string,"p_place_id": string }; Returns: undefined
-                           },
 "nearby_cafes":
 { Args: { "p_lat": number,"p_limit"?: number,"p_lng": number }; Returns: {
               "distance_m": number,"google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
@@ -432,6 +492,9 @@ isOneToOne: false
                            },
 "refresh_cafe":
 { Args: { "p_cafe_id": string,"p_lat": number,"p_lng": number,"p_name": string }; Returns: undefined
+                           },
+"require_moderator":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "review_rate_limit":
 { Args: Record<PropertyKey, never>; Returns: number
@@ -460,12 +523,15 @@ isOneToOne: false
               "google_place_id": string,"id": string,"lat": number,"lng": number,"name": string,"suburb": string
             }[]
                            },
+"user_is_banned":
+{ Args: { "p_user_id": string }; Returns: boolean
+                           },
 "verified_radius_m":
 { Args: Record<PropertyKey, never>; Returns: number
                            }
           }
           Enums: {
-            "drink_group": "espresso"|"brewed"|"iced"|"other","metric": "coffee"|"food"|"vibe"|"work","milk_type": "full_cream"|"skim"|"oat"|"soy"|"almond"|"lactose_free","report_reason": "spam"|"offensive"|"fake"|"other"
+            "drink_group": "espresso"|"brewed"|"iced"|"other","metric": "coffee"|"food"|"vibe"|"work","milk_type": "full_cream"|"skim"|"oat"|"soy"|"almond"|"lactose_free","moderation_action": "dismiss"|"hide"|"restore"|"ban"|"unban","report_reason": "spam"|"offensive"|"fake"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -585,7 +651,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "drink_group": ["espresso", "brewed", "iced", "other"],"metric": ["coffee", "food", "vibe", "work"],"milk_type": ["full_cream", "skim", "oat", "soy", "almond", "lactose_free"],"report_reason": ["spam", "offensive", "fake", "other"]
+            "drink_group": ["espresso", "brewed", "iced", "other"],"metric": ["coffee", "food", "vibe", "work"],"milk_type": ["full_cream", "skim", "oat", "soy", "almond", "lactose_free"],"moderation_action": ["dismiss", "hide", "restore", "ban", "unban"],"report_reason": ["spam", "offensive", "fake", "other"]
           }
         }
 } as const

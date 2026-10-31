@@ -196,4 +196,24 @@ describe("ProfileView", () => {
     await fireEvent.press(screen.getByText("Save"));
     expect(h.onSaveName).not.toHaveBeenCalled();
   });
+
+  it("has no Moderation group for people who are not moderators", async () => {
+    await renderProfile();
+    expect(screen.queryByText("Moderation")).toBeNull();
+    expect(screen.queryByLabelText(/Report queue/)).toBeNull();
+  });
+
+  it("shows moderators the report queue with its open count", async () => {
+    const onOpenModeration = jest.fn();
+    await renderProfile({ onOpenModeration, moderationOpenCount: 4 });
+    expect(screen.getByText("Moderation")).toBeTruthy();
+    expect(screen.getByText("4 open")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Report queue, 4 open"));
+    expect(onOpenModeration).toHaveBeenCalled();
+  });
+
+  it("shows no badge when nothing is open", async () => {
+    await renderProfile({ onOpenModeration: jest.fn(), moderationOpenCount: 0 });
+    expect(screen.getByLabelText("Report queue")).toBeTruthy();
+  });
 });

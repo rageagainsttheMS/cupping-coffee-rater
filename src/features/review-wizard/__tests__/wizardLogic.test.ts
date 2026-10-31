@@ -434,13 +434,13 @@ describe("describeMovements", () => {
     expect(coffee).toMatchObject({ from: "4.2", to: "4.3", state: "moved" });
   });
 
-  it("reports how many ratings are still needed", () => {
+  it("unlocks a score with the first rating", () => {
     const [food] = describeMovements(
       { food: { score: null, count: 0 } },
-      { food: { score: null, count: 1 } },
+      { food: { score: 4, count: 1 } },
       "New",
     );
-    expect(food).toMatchObject({ from: "New", to: "New", state: "pending", remaining: 2 });
+    expect(food).toMatchObject({ from: "New", to: "4.0", state: "unlocked", remaining: 0 });
   });
 
   it("only covers metrics the review rated, in the standard order", () => {
@@ -452,8 +452,8 @@ describe("describeMovements", () => {
     expect(moves.map((m) => m.metric)).toEqual(["coffee", "work"]);
   });
 
-  it("treats a score with under 3 ratings as New even if the server sends one", () => {
-    const [vibe] = describeMovements({}, { vibe: { score: 4.5, count: 2 } }, "New");
+  it("treats a score with no ratings as New even if the server sends one", () => {
+    const [vibe] = describeMovements({}, { vibe: { score: 4.5, count: 0 } }, "New");
     expect(vibe).toMatchObject({ to: "New", state: "pending" });
   });
 });

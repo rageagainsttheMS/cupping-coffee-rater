@@ -158,7 +158,9 @@ export const copy = {
       moved: (label: string, from: string, to: string) => `${label}: ${from} → ${to}`,
       unchanged: (label: string, score: string) => `${label}: ${score}`,
       pending: (label: string, remaining: number) =>
-        `${label}: New · ${remaining} more ${remaining === 1 ? "rating" : "ratings"} to unlock`,
+        remaining > 0
+          ? `${label}: New · ${remaining} more ${remaining === 1 ? "rating" : "ratings"} to unlock`
+          : `${label}: New`,
       followUp: (label: string) => `Add ${label.toLowerCase()} details?`,
       followUpBody: "It takes a few seconds and makes the scores more useful.",
       followUpAction: "Add now",
@@ -329,6 +331,12 @@ export const copy = {
       playServices:
         "Google sign-in needs Google Play services, which this phone doesn't have or needs to update.",
       linkInvalid: "That link has expired or was already used. Request a new one.",
+      banned: "This account is suspended for breaking the Terms of Use.",
+      bannedTitle: "This account is suspended",
+      bannedBody: (email: string | null) =>
+        email
+          ? `It broke the Terms of Use. If you think this is a mistake, email ${email}.`
+          : "It broke the Terms of Use. If you think this is a mistake, contact us.",
       generic: "Something went wrong. Please try again.",
     },
   },
@@ -523,6 +531,111 @@ export const copy = {
       action: "Delete my account",
       failed: "Couldn't delete your account. Check your connection and try again.",
     },
+  },
+
+  moderation: {
+    group: "Moderation",
+    row: "Report queue",
+    openBadge: (count: number) => `${count} open`,
+    unknownName: "Someone",
+    age: {
+      now: "now",
+      hours: (n: number) => `${n} h`,
+      days: (n: number) => `${n} d`,
+    },
+    queue: {
+      title: "Report queue",
+      summary: {
+        open: (count: number) =>
+          `${count} ${count === 1 ? "review" : "reviews"} to check · oldest first`,
+        hidden: "Hidden reviews · most recent first",
+        banned: "Banned people · most recent first",
+      },
+      chips: {
+        open: (count: number | null) => (count ? `Open · ${count}` : "Open"),
+        hidden: "Hidden",
+        banned: "Banned",
+      },
+      chipsLabel: "Choose which list to show",
+      byAuthor: (suburb: string | null, author: string) =>
+        suburb ? `${suburb} · by ${author}` : `by ${author}`,
+      reports: (count: number) => `${count} ${count === 1 ? "report" : "reports"}`,
+      noReports: "No reports",
+      ageLabel: (age: string, overdue: boolean) =>
+        overdue ? `Oldest report ${age} old, past 24 hours` : `Oldest report ${age} old`,
+      hiddenAge: (age: string) => `Hidden ${age} ago`,
+      openReview: (author: string, cafe: string) => `${author}'s review of ${cafe}. Open`,
+      bannedLine: (hidden: number, age: string | null) =>
+        [
+          age ? `Banned ${age} ago` : "Banned",
+          `${hidden} hidden ${hidden === 1 ? "review" : "reviews"}`,
+        ].join(" · "),
+      unban: "Unban",
+      unbanLabel: (name: string) => `Unban ${name}`,
+      empty: {
+        open: { title: "No open reports", body: "Reports people send will show up here." },
+        hidden: { title: "No hidden reviews", body: "Reviews you hide will show up here." },
+        banned: { title: "Nobody is banned", body: "People you ban will show up here." },
+      },
+      loadError: "Couldn't load the queue.",
+      retry: "Try again",
+    },
+    review: {
+      title: "Report",
+      visited: (suburb: string | null, age: string) =>
+        suburb ? `${suburb} · visited ${age}` : `visited ${age}`,
+      hiddenNotice: "This review is hidden. Nobody else can see it.",
+      author: (joined: string, reviews: number, hidden: number) =>
+        `Joined ${joined} · ${reviews} ${reviews === 1 ? "review" : "reviews"} · ${hidden} hidden`,
+      banned: "Banned",
+      reportsHeading: (count: number) => `${count} ${count === 1 ? "report" : "reports"}`,
+      reporter: (n: number, reason: string) => `Reporter ${n} · ${reason}`,
+      reportAge: (age: string) => `${age} ago`,
+      closed: "Closed",
+      dismiss: "Dismiss",
+      hide: "Hide review",
+      restore: "Restore review",
+      ban: (name: string) => `Hide and ban ${name}`,
+      unban: (name: string) => `Unban ${name}`,
+      loadError: "Couldn't load this report.",
+      retry: "Try again",
+    },
+    sheet: {
+      noteLabel: "Note for the log",
+      optional: "(optional)",
+      count: (used: number, max: number) => `${used} / ${max}`,
+      cancel: "Cancel",
+      // Every action takes the author's name and review count, so the sheet can treat them alike.
+      dismiss: {
+        title: () => "Dismiss the reports?",
+        body: () => "The review stays up and its reports are closed.",
+        confirm: "Dismiss reports",
+      },
+      hide: {
+        title: () => "Hide this review?",
+        body: () =>
+          "It disappears from the app and stops counting toward scores, and its reports are closed. You can restore it later.",
+        confirm: "Hide review",
+      },
+      restore: {
+        title: () => "Restore this review?",
+        body: () => "It shows in the app again and counts toward scores.",
+        confirm: "Restore review",
+      },
+      ban: {
+        title: (name: string) => `Ban ${name}?`,
+        body: (name: string, reviews: number) =>
+          `${name} won't be able to sign in. All ${reviews} of their ${reviews === 1 ? "review is" : "reviews are"} hidden and stop counting toward scores. You can unban them later, which brings those reviews back.`,
+        confirm: "Hide reviews and ban",
+      },
+      unban: {
+        title: (name: string) => `Unban ${name}?`,
+        body: (name: string) =>
+          `${name} can sign in again, and the reviews the ban hid come back. Reviews hidden on their own stay hidden.`,
+        confirm: "Unban",
+      },
+    },
+    failed: "Couldn't do that. Check your connection and try again.",
   },
 
   search: {

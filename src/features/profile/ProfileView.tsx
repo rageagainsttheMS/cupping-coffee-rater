@@ -30,6 +30,10 @@ type Props = {
   onOpenAccount: () => void;
   onOpenHelp: () => void;
   onSignOut: () => void;
+  /** Given only to moderators: shows the Moderation group. */
+  onOpenModeration?: () => void;
+  /** Reviews with open reports. Null until loaded. */
+  moderationOpenCount?: number | null;
 };
 
 /** The Profile tab: who you are, your activity, settings, and sign out. */
@@ -69,6 +73,21 @@ export function ProfileView(props: Props) {
           onPress={props.onOpenSaved}
         />
       </SettingsGroup>
+
+      {props.onOpenModeration ? (
+        <SettingsGroup title={copy.moderation.group}>
+          <SettingsRow
+            icon="shield-check-outline"
+            label={copy.moderation.row}
+            badge={
+              props.moderationOpenCount
+                ? copy.moderation.openBadge(props.moderationOpenCount)
+                : undefined
+            }
+            onPress={props.onOpenModeration}
+          />
+        </SettingsGroup>
+      ) : null}
 
       <SettingsGroup title={text.settings}>
         <SettingsRow

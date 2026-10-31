@@ -1,5 +1,5 @@
 import { copy } from "@/lib/copy/en";
-import { authErrorMessage } from "../authErrors";
+import { authErrorMessage, isBannedError } from "../authErrors";
 
 describe("authErrorMessage", () => {
   it.each([
@@ -10,8 +10,17 @@ describe("authErrorMessage", () => {
     ["weak_password", copy.auth.errors.weakPassword],
     ["over_request_rate_limit", copy.auth.errors.rateLimited],
     ["over_email_send_rate_limit", copy.auth.errors.rateLimited],
+    ["user_banned", copy.auth.errors.banned],
   ])("maps the %s code to plain language", (code, expected) => {
     expect(authErrorMessage({ code, message: "raw server message", status: 400 })).toBe(expected);
+  });
+
+  it("recognises a banned account", () => {
+    expect(isBannedError({ code: "user_banned", message: "User is banned", status: 400 })).toBe(
+      true,
+    );
+    expect(isBannedError({ code: "invalid_credentials" })).toBe(false);
+    expect(isBannedError(null)).toBe(false);
   });
 
   it("never shows the raw server message", () => {

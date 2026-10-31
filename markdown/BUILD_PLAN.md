@@ -1065,7 +1065,28 @@ dozen files, with no new dev build needed (the image picker already supports mul
 
 ### Moderation and account banning inside the app
 
-Not planned and **not built.** In Phase 1 all moderation happens in Supabase Studio (see
+**Built 31 Oct 2026 (core).** The process is in `markdown/moderation.md`.
+
+> **As built.** Moderators have `app_metadata.role = 'moderator'`, set by hand with the service role.
+> `is_moderator()` reads `auth.users`, not the token, so taking the role away works at once, and a banned
+> moderator is not a moderator. Migration `20261031110000_moderation.sql` adds the
+> `moderation_actions` log and the functions `moderation_queue` (Open: oldest report first; Hidden:
+> most recently hidden first; up to 100 rows, no paging at beta volumes), `moderation_review`,
+> `moderation_open_count`, `moderation_banned_users` and `moderate_review` (dismiss, hide, restore). Each
+> one refuses non-moderators with `42501`. Ban and unban go through the `moderate-user` Edge Function,
+> which sets the auth ban (`876000h`) and then calls `apply_ban` or `lift_ban` (service role only).
+> Unbanning restores only the reviews the bans hid since the last unban. A trigger on `reviews` and
+> `review_reports` refuses writes from a banned account, which closes the hour in which an old token
+> still works. Screens follow the designs in Product Design Ideas: a Moderation group on Profile with
+> the open count, the Report queue (Open, Hidden, Banned), the Report screen with Dismiss, Hide or
+> Restore, and Hide and ban or Unban, an action sheet with a note for the log, and a "This account is
+> suspended" notice on sign-in (`user_banned`). Reporters are never named to moderators. Tests:
+> `18_moderation.test.sql` (42), `moderateUser.test.ts` and `features/moderation/__tests__`. Not built:
+> alerts on new reports, telling authors and appeals, and managing moderators in the app.
+
+The plan it was built from, kept for reference:
+
+In Phase 1 all moderation happened in Supabase Studio (see
 `markdown/moderation.md`): read `review_reports`, hide a review by setting `hidden_at`, ban a user in the
 Auth admin view. That is fine for a beta with a handful of reports a week. Later, build it into the app
 so it can be done from a phone and shared with other moderators.

@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import type { ComponentProps, ReactNode } from "react";
 import { Text } from "@/components/Text";
 import { copy } from "@/lib/copy/en";
+import { mix } from "@/lib/theme/contrast";
 import { radius, spacing } from "@/lib/theme/tokens";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
@@ -53,15 +54,17 @@ type RowProps = {
   value?: string;
   /** `danger` colours the row for an action that can't be undone. */
   tone?: "danger";
+  /** A red pill in place of the value, for something waiting on you, e.g. "4 open". */
+  badge?: string;
   onPress: () => void;
 };
 
-export function SettingsRow({ icon, label, value, tone, onPress }: RowProps) {
+export function SettingsRow({ icon, label, value, tone, badge, onPress }: RowProps) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={copy.profile.rowLabel(label, value ?? "")}
+      accessibilityLabel={copy.profile.rowLabel(label, badge ?? value ?? "")}
       onPress={onPress}
       style={{
         minHeight: 56,
@@ -83,7 +86,20 @@ export function SettingsRow({ icon, label, value, tone, onPress }: RowProps) {
       >
         {label}
       </Text>
-      {value ? (
+      {badge ? (
+        <View
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingVertical: 2,
+            borderRadius: radius.pill,
+            backgroundColor: mix(colors.danger, colors.surface, 0.88),
+          }}
+        >
+          <Text variant="label" color={colors.danger}>
+            {badge}
+          </Text>
+        </View>
+      ) : value ? (
         <Text muted numberOfLines={1}>
           {value}
         </Text>
