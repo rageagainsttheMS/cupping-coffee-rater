@@ -12,7 +12,11 @@ const config: ExpoConfig = {
     icon: "./assets/expo.icon",
     bundleIdentifier: "com.williamw.cupping",
     usesAppleSignIn: true,
-    config: { googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY },
+    config: {
+      googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY,
+      // Only HTTPS and expo-crypto hashing, both exempt, so EAS doesn't ask on every build.
+      usesNonExemptEncryption: false,
+    },
   },
   android: {
     package: "com.williamw.cupping",

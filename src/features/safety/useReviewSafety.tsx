@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
+import { MenuSheet } from "@/components/MenuSheet";
 import type { CafeReview } from "@/features/cafe/types";
 import { copy } from "@/lib/copy/en";
 import { classifyReportError } from "./reports";
@@ -8,11 +9,12 @@ import { useBlockUser, useReportReview } from "./useSafety";
 
 /**
  * The "…" menu on someone else's review: Report review and Block. `openMenu` shows the menu, and
- * `sheet` is the report sheet, which the screen renders once.
+ * `sheet` holds the menu and the report sheet, which the screen renders once.
  */
 export function useReviewSafety() {
   const report = useReportReview();
   const block = useBlockUser();
+  const [menuFor, setMenuFor] = useState<CafeReview | null>(null);
   const [reporting, setReporting] = useState<CafeReview | null>(null);
 
   const confirmBlock = useCallback(
@@ -29,19 +31,7 @@ export function useReviewSafety() {
     [block],
   );
 
-  const openMenu = useCallback(
-    (review: CafeReview) =>
-      Alert.alert(copy.safety.menu(review.author_name), undefined, [
-        { text: copy.safety.report, onPress: () => setReporting(review) },
-        {
-          text: copy.safety.block(review.author_name),
-          style: "destructive",
-          onPress: () => confirmBlock(review),
-        },
-        { text: copy.safety.cancel, style: "cancel" },
-      ]),
-    [confirmBlock],
-  );
+  const openMenu = useCallback((review: CafeReview) => setMenuFor(review), []);
 
   const submit = (reason: Parameters<typeof report.mutate>[0]["reason"], details: string) => {
     if (!reporting) return;
@@ -64,12 +54,36 @@ export function useReviewSafety() {
   };
 
   const sheet = (
-    <ReportSheet
-      visible={reporting !== null}
-      busy={report.isPending}
-      onSubmit={submit}
-      onCancel={() => setReporting(null)}
-    />
+    <>
+      <MenuSheet
+        visible={menuFor !== null}
+        title={menuFor ? copy.safety.menuTitle(menuFor.author_name) : ""}
+        items={
+          menuFor
+            ? [
+                {
+                  label: copy.safety.report,
+                  icon: "flag-outline",
+                  onPress: () => setReporting(menuFor),
+                },
+                {
+                  label: copy.safety.block(menuFor.author_name),
+                  icon: "account-cancel-outline",
+                  destructive: true,
+                  onPress: () => confirmBlock(menuFor),
+                },
+              ]
+            : []
+        }
+        onClose={() => setMenuFor(null)}
+      />
+      <ReportSheet
+        visible={reporting !== null}
+        busy={report.isPending}
+        onSubmit={submit}
+        onCancel={() => setReporting(null)}
+      />
+    </>
   );
 
   return { openMenu, sheet };

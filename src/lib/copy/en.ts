@@ -16,6 +16,7 @@ export const copy = {
     skip: "Skip",
     next: "Next",
     loading: "Loading",
+    cancel: "Cancel",
   },
 
   tabs: {
@@ -430,6 +431,7 @@ export const copy = {
       },
       chipsLabel: "Sort and filter your reviews",
       menu: (cafe: string) => `More options for your review of ${cafe}`,
+      menuSubtitle: "Your review",
       openCafe: (cafe: string) => `${cafe}. Open cafe page`,
       notRated: "Not rated",
       emptyTitle: "No reviews yet",
@@ -480,6 +482,7 @@ export const copy = {
 
   safety: {
     menu: (name: string) => `Options for ${name}'s review`,
+    menuTitle: (name: string) => `${name}'s review`,
     menuLabel: "More options",
     report: "Report review",
     block: (name: string) => `Block ${name}`,
