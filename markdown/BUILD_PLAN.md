@@ -911,6 +911,16 @@ In `app.config.ts`:
 - App icon (1024 × 1024), Android adaptive icon (foreground + background colour), splash screen in the cream theme with the cup mark, all in `assets/`.
 - Keep the placeholder name "Coffee Rater" unless the name has been chosen and checked for trademarks and store availability.
 
+> **As built (2 Nov 2026).** The mark is a "C" with a terracotta dot, drawn in `assets/images/cupping-icon.svg`
+> (the source; edit it, then export the PNGs). `icon.png` (1024, no transparency) is the app icon on iOS and
+> Android; the `ios.icon` Icon Composer bundle (`assets/expo.icon`) was removed so iOS uses it too. Android
+> adaptive icon: `adaptive-foreground.png` on `adaptive-background.png` (cream `#F2E3CF`), plus
+> `adaptive-monochrome.png` for themed icons. The splash is the mark (`splash-icon.png`) on the light theme's
+> cream `#FBF6EE`; there is no dark splash, because the dark brown mark would vanish on the dark theme's
+> background. `favicon.png` is the icon at 48 px. The Expo template images (logos, badges, tab icons, the
+> tutorial image) and two unused README screenshots were deleted. The in-app `AppLogo` is still the
+> coffee-cup glyph on an espresso square, a placeholder.
+
 ### 12.3 EAS environments
 
 For the `production` environment (`eas env:create … --environment production`):
