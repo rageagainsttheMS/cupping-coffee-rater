@@ -70,6 +70,8 @@ const config: ExpoConfig = {
       },
     ],
     "expo-image",
+    "expo-status-bar",
+    "expo-web-browser",
     "expo-secure-store",
     "expo-apple-authentication",
     [
