@@ -25,6 +25,15 @@ const config: ExpoConfig = {
       backgroundImage: "./assets/images/adaptive-background.png",
       monochromeImage: "./assets/images/adaptive-monochrome.png",
     },
+    // Only what the app uses. CAMERA is needed for requestCameraPermissionsAsync to be able to say yes.
+    permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "CAMERA"],
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.VIBRATE",
+      "android.permission.RECORD_AUDIO",
+    ],
     predictiveBackGestureEnabled: false,
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
   },

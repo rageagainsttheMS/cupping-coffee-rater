@@ -906,10 +906,22 @@ In `app.config.ts`:
 - `ios.usesAppleSignIn: true`; all config plugins (expo-router, expo-location, expo-image-picker, expo-font, expo-splash-screen, google-signin, apple-authentication, Sentry).
 - `userInterfaceStyle: "automatic"`.
 
+> **As built (2 Nov 2026).** Most of this was already in place from earlier milestones: slug, scheme,
+> bundle ids, `runtimeVersion`, remote versioning with `autoIncrement` on production, Apple sign-in, the
+> plugins (expo-router, expo-location, expo-image-picker, expo-splash-screen, expo-secure-store,
+> expo-apple-authentication, Sentry, Google sign-in) and `userInterfaceStyle`. `version` is `1.0.0`, not
+> `0.1.0`. The iOS permission strings are set through the location and image-picker plugins in place of
+> `ios.infoPlist`, and `ITSAppUsesNonExemptEncryption: false` is `ios.config.usesNonExemptEncryption`.
+> Added today: `android.permissions` (coarse and fine location, camera) and `android.blockedPermissions`
+> (external storage read and write, overlay windows, vibrate, microphone). The camera permission was
+> missing from the Android manifest, so "Take photo" could never have been granted. There is no
+> `expo-font` plugin entry because the fonts load at runtime with `useFonts`. Needs a new native build to
+> take effect.
+
 ### 12.2 Assets
 
 - App icon (1024 × 1024), Android adaptive icon (foreground + background colour), splash screen in the cream theme with the cup mark, all in `assets/`.
-- Keep the placeholder name "Coffee Rater" unless the name has been chosen and checked for trademarks and store availability.
+- The app name is now "Cupping - Coffee Rater". Still to check: trademarks and store availability.
 
 > **As built (2 Nov 2026).** The mark is a "C" with a terracotta dot, drawn in `assets/images/cupping-icon.svg`
 > (the source; edit it, then export the PNGs). `icon.png` (1024, no transparency) is the app icon on iOS and
