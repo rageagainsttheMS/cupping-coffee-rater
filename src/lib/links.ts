@@ -14,7 +14,7 @@ export const LEGAL_URLS: { terms: string | null; privacy: string | null } = {
 export const ACCOUNT_DELETION_URL = `${LEGAL_SITE}/delete-account.html`;
 
 /** The published contact address, shown on the legal pages and as Contact us on the Help screen. */
-export const CONTACT_EMAIL: string | null = "williamawrigley@gmail.com";
+export const CONTACT_EMAIL: string | null = "wrigley.studios@gmail.com";
 
 export function openLegal(page: keyof typeof LEGAL_URLS): void {
   const url = LEGAL_URLS[page];

@@ -73,7 +73,7 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 
 ### Legal pages and contact
 
-**Open until published.** Draft Privacy Policy, Terms of Use and account deletion pages are in `docs-site/`, written in plain language for Australia. The contact email is williamawrigley@gmail.com (set 21 Oct 2026) on every page and as `CONTACT_EMAIL` in `src/lib/links.ts`; a dedicated address for the app would be better before launch. The pages are hosted (see Legal links) and still need a legal read-through before the store submissions (M11/M12). The Privacy Policy says exactly what the app does today (location is checked and discarded, nothing is stored); revisit it when Sentry is added.
+**Open until published.** Draft Privacy Policy, Terms of Use and account deletion pages are in `docs-site/`, written in plain language for Australia. The contact email is wrigley.studios@gmail.com (set 21 Oct 2026) on every page and as `CONTACT_EMAIL` in `src/lib/links.ts`; a dedicated address for the app would be better before launch. The pages are hosted (see Legal links) and still need a legal read-through before the store submissions (M11/M12). The Privacy Policy says exactly what the app does today (location is checked and discarded, nothing is stored); revisit it when Sentry is added.
 
 ### One row per drink in a review
 

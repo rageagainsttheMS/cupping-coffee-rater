@@ -768,7 +768,7 @@ Both stores require these for user-generated content. All are Phase 1.
 > nothing in any table or the bucket.
 >
 > **9.5 Legal pages.** Static pages are in `docs-site/` (Privacy Policy, Terms of Use, account deletion page,
-> index). The contact email (williamawrigley@gmail.com, set 21 Oct 2026) is on all four pages and is
+> index). The contact email (wrigley.studios@gmail.com, set 21 Oct 2026) is on all four pages and is
 > `CONTACT_EMAIL` in `src/lib/links.ts`. **Hosted:** the pages are live on GitHub Pages from the public repo
 > `rageagainsttheMS/cupping-legal` (https://rageagainstthems.github.io/cupping-legal/), and `LEGAL_URLS` and
 > `ACCOUNT_DELETION_URL` point there, so the Terms, Privacy and Contact rows now work. To change a page, edit
