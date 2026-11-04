@@ -8,3 +8,6 @@ src/lib/database.types.ts
 *.md
 
 coverage/
+
+# Exported from the Termly policy generator; its markup is not valid enough for prettier to parse.
+docs-site/privacy.html

@@ -33,6 +33,8 @@ const config: ExpoConfig = {
       "android.permission.SYSTEM_ALERT_WINDOW",
       "android.permission.VIBRATE",
       "android.permission.RECORD_AUDIO",
+      // No ads, and the Play Console declaration says the app doesn't use the advertising ID.
+      "com.google.android.gms.permission.AD_ID",
     ],
     predictiveBackGestureEnabled: false,
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },

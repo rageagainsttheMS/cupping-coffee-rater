@@ -48,3 +48,6 @@ supabase/.env
 
 # test coverage output
 coverage/
+
+# Google Play service account key for `eas submit` (see BUILD_PLAN 12.6)
+play-service-account.json

@@ -944,31 +944,112 @@ For the `production` environment (`eas env:create … --environment production`)
 
 Check `eas.json`: `production` builds an Android **app bundle** and an iOS store build with `"environment": "production"`; `preview` builds an internal APK against the hosted project.
 
+> **Checked 4 Nov 2026.** `eas.json` is right. The `production` environment on EAS has the Maps keys,
+> the Sentry DSN and auth token, and `EXPO_PUBLIC_APP_ENV`, but **not** the Supabase URL, the anon key
+> or the Google web client ID. A production build made now would have no backend and no Google sign-in.
+> `preview` has all three, pointing at the hosted project (`pigzqwghwsrxxocdbftm`), so copy them across
+> (take each value from `eas env:list --environment preview --include-sensitive`):
+>
+> ```powershell
+> eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value <url> --visibility plaintext
+> eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <key> --visibility sensitive
+> eas env:create --environment production --name EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID --value <id> --visibility plaintext
+> ```
+>
+> `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` and `GOOGLE_IOS_URL_SCHEME` wait for the iOS build.
+
 ### 12.4 Signing keys and key restrictions
 
 - Run `eas credentials` for Android to generate the upload keystore. Add its **SHA-1** to (a) the Android Maps key restriction and (b) the Android OAuth client for Google sign-in. Without this, the production build shows a blank map and Google sign-in fails.
 - After the first Play upload, also add the **Play App Signing** SHA-1 from the Play Console.
 - iOS: needs the Apple Developer Program (US$99/year). EAS creates the certificates and provisioning profile on the first iOS build. Configure the Apple sign-in Services ID and key in Supabase at the same time.
 
+> **Status (4 Nov 2026).**
+>
+> - **Upload key: done.** The map and Google sign-in work on the `preview` APK. EAS uses one Android
+>   keystore for every profile, so the upload key's SHA-1 is already on the Maps key and the Android
+>   OAuth client.
+> - **Play App Signing SHA-1: still to do.** After the first upload, copy the **App signing key
+>   certificate** SHA-1 from Play Console (Test and release → App integrity → App signing). Add it to the
+>   Maps key restriction and to an Android OAuth client for `com.williamw.cupping`. Keep the upload key's
+>   SHA-1 as well, because side-loaded preview APKs still use it. Skip this and testers who install
+>   from Play get a blank map and `DEVELOPER_ERROR` on Google sign-in, even though the preview APK works.
+> - **iOS: waiting.** It needs the Apple Developer Program membership. On 3 Nov `eas build` reported "no
+>   team associated with your Apple account".
+
 ### 12.5 Pre-build checklist
 
-- [ ] `npm run lint`, `npm run typecheck`, `npm test`, `npm run db:test` all green on `main`
-- [ ] `npx expo-doctor` reports no issues
-- [ ] `npx expo install --check` reports no version mismatches
-- [ ] No `localhost`/LAN URLs, service-role key or Places key anywhere in the app bundle (`git grep` for them)
+- [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run db:test` all green on `main`
+- [x] `npx expo-doctor` reports no issues
+- [x] `npx expo install --check` reports no version mismatches
+- [x] No `localhost`/LAN URLs, service-role key or Places key anywhere in the app bundle (`git grep` for them)
 - [ ] Hosted Supabase has every migration and function; Pro plan on
-- [ ] Privacy Policy, Terms and account-deletion URLs are live
+- [x] Privacy Policy, Terms and account-deletion URLs are live
 - [ ] Privacy Policy and Terms have been written or reviewed properly (generator/template edited to match the app, or a solicitor), not just the M9 drafts
-- [ ] Google attribution shown wherever Google data appears (Google rating, cafe names from Places)
+- [x] Google attribution shown wherever Google data appears (Google rating, cafe names from Places)
 - [ ] A `preview` APK against the hosted project passes the M11.5 field tests (journey checklist) on the phone
+
+> **Checked 4 Nov 2026.**
+>
+> - **Checks:** lint, typecheck, 490 Jest tests and 300 pgTAP tests pass.
+> - **`expo-doctor`:** 20/20. That needed the Expo SDK 58 patch updates, Jest 30 and the `expo-status-bar`
+>   and `expo-web-browser` plugins.
+> - **Bundle scan:** `git grep` over `src/` and `app.config.ts` finds no local addresses, service-role key
+>   or Google API key.
+> - **Legal pages:** all three return 200.
+> - **Google attribution:** the Google rating is greyed out with "Google" under it, and Help has a
+>   Google attribution section.
+> - **Hosted Supabase:** it has all 25 migrations and all five functions (`places-search`,
+>   `places-details`, `delete-account`, `refresh-cafes`, `moderate-user`). Confirm the Pro plan in the
+>   dashboard, then tick that line.
+>
+> **The Privacy Policy is now the Termly version.** It doesn't mention Sentry (crash reports and
+> diagnostics) yet, so add it. `docs-site/privacy.html` is Termly's exported markup, which prettier can't
+> parse, so it is listed in `.prettierignore`. The Terms gained a "Google Maps" section on 4 Nov 2026:
+> by using the app you agree to the Google Maps/Google Earth Additional Terms of Service and the
+> Google Privacy Policy, as Google's Maps Platform terms require.
 
 ### 12.6 First production build
 
 ```powershell
-git tag v0.1.0; git push origin v0.1.0        # triggers release.yml, or run directly:
 eas build --profile production --platform android
 eas build --profile production --platform ios   # once the Apple Developer account exists
 ```
+
+There is no `release.yml` workflow (only `ci.yml`), so build directly. Tag the commit afterwards if you
+want a marker (`v1.0.0`, matching `version`).
+
+**First upload to Google Play (manual, once).** Google only allows API uploads after the first bundle has
+been uploaded by hand.
+
+1. Run the production build above. It makes an `.aab` and bumps the version code (`autoIncrement`, remote).
+   Do 12.3 first, or the build has no backend.
+2. Download the `.aab` from the EAS build page.
+3. Play Console → Testing → Closed testing → Create release, then drop the `.aab` in.
+4. Accept **Play App Signing**. EAS keeps the upload key, and Google signs what users install. Then add the
+   Play App Signing SHA-1 to the Maps key and the Android OAuth client (12.4).
+5. Release name, for example "1.0.0 first closed test". Add notes with the contact email. Choose the testers
+   (an email list or a Google Group), then Preview and confirm.
+
+**Later uploads: automated with `eas submit`.** `eas.json` `submit.production.android` sends to the
+closed testing track (`alpha`) as a **draft**, so nothing reaches testers until you press release in Play
+Console. To set it up once:
+
+1. Play Console → Setup → API access. Create a Google Cloud service account with release rights for this
+   app and download its JSON key.
+2. Save the key as `play-service-account.json` in the repo root. It is git-ignored; never commit it.
+3. Then run `eas submit --platform android --profile production` after a build, or
+   `eas build --platform android --profile production --auto-submit` for both at once.
+
+**Play's rule for new personal accounts:** a closed test with at least **12 testers opted in for 14 days in
+a row** before you can apply for production. The 14 days start when the testers opt in, so invite them
+with the first upload.
+
+**Store listing (done 4 Nov 2026).** Listing text, the 512 px icon (`assets/store/play-icon-512.png`, the
+1024 icon resized) and the feature graphic (`assets/store/feature-graphic.png`, 1024 × 500) are in.
+Content rating, Data safety, the advertising ID (No) and the reviewer sign-in details are filled in. The
+reviewer account is a normal account on the hosted project, not a moderator. `app.config.ts` blocks
+`com.google.android.gms.permission.AD_ID` so the bundle matches the "no advertising ID" answer.
 
 Install the Android build through a Play Console **internal testing** track (or the `preview`
 APK for side-loading) and do a final smoke test: sign up, map loads with your key, post a review
