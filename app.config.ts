@@ -12,7 +12,6 @@ const config: ExpoConfig = {
     bundleIdentifier: "com.williamw.cupping",
     usesAppleSignIn: true,
     config: {
-      googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY,
       // Only HTTPS and expo-crypto hashing, both exempt, so EAS doesn't ask on every build.
       usesNonExemptEncryption: false,
     },
@@ -37,7 +36,6 @@ const config: ExpoConfig = {
       "com.google.android.gms.permission.AD_ID",
     ],
     predictiveBackGestureEnabled: false,
-    config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
   },
   web: {
     output: "static",
@@ -76,6 +74,16 @@ const config: ExpoConfig = {
     "expo-web-browser",
     "expo-secure-store",
     "expo-apple-authentication",
+    // Google Maps keys. The plugin adds the `react-native-maps/Google` pod on iOS; Expo's own
+    // `ios.config.googleMapsApiKey` asks for a `react-native-google-maps` pod that no longer exists.
+    // Both keys go here: without an Android key the plugin removes the Android one.
+    [
+      "react-native-maps",
+      {
+        iosGoogleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY,
+        androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_KEY,
+      },
+    ],
     [
       "expo-build-properties",
       {
