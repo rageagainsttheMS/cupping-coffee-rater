@@ -1,16 +1,16 @@
+import { Platform } from "react-native";
 import { copy } from "@/lib/copy/en";
 import { supabase } from "@/lib/supabase";
 import { authErrorMessage } from "./authErrors";
 import { classifyGoogleError } from "./googleHelpers";
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
 /**
- * Google sign-in is on only once a web client ID is set (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`), and
- * only in a build that includes the native module. Until then the button is hidden.
+ * Google sign-in is Android only, and on only once a web client ID is set
+ * (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`). iPhone users have Sign in with Apple and email instead.
  */
-export const googleSignInConfigured = !!webClientId;
+export const googleSignInConfigured = Platform.OS === "android" && !!webClientId;
 
 // The native module is loaded on first use, never at startup. A build made before the module was
 // added would otherwise fail on launch, and only people with Google set up pay for loading it.
@@ -18,7 +18,7 @@ let configured = false;
 async function loadGoogle() {
   const google = await import("@react-native-google-signin/google-signin");
   if (!configured) {
-    google.GoogleSignin.configure({ webClientId, iosClientId });
+    google.GoogleSignin.configure({ webClientId });
     configured = true;
   }
   return google;

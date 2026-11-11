@@ -8,7 +8,7 @@ import { googleSignInConfigured } from "./googleAuth";
 
 /**
  * The social sign-in buttons, with the "or with email" divider under them. Each button appears only
- * where it can work: Google once it is configured, Apple on iPhone. With neither, nothing shows.
+ * where it can work: Google on Android once it is configured, Apple on iPhone. With neither, nothing shows.
  */
 export function SocialSignIn({ onError }: { onError: (message: string) => void }) {
   const appleAvailable = useAppleAvailable();

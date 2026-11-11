@@ -365,7 +365,7 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
      - **iOS.** Bundle ID `com.williamw.cupping`. Note the client ID and its reversed form, the iOS URL scheme (`com.googleusercontent.apps.…`).
   3. **Supabase dashboard** (hosted, M11) → Authentication → Providers → Google: enable; **Client IDs** = the web client ID first, then the Android and iOS client IDs, comma-separated; secret = the web client secret. Leave "Skip nonce check" off unless sign-in fails with a nonce error (iOS is the likely case).
   4. **Local testing** against local Supabase (the app currently points at it): add `[auth.external.google]` to `supabase/config.toml` with `enabled = true`, `client_id` = the web client ID, `secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"` and `skip_nonce_check = true`, put the secret in `supabase/.env` (git-ignored), then restart with `supabase stop` and `supabase start`.
-  5. **App settings:** in `.env.local` set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` for iOS). For iOS builds also set `GOOGLE_IOS_URL_SCHEME`. For EAS builds add the same as EAS environment variables (`eas env:create`) for each environment. They are not secrets.
+  5. **App settings:** in `.env.local` set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. Google sign-in is Android only, so iOS needs nothing. For EAS builds add the same as EAS environment variables (`eas env:create`) for each environment. They are not secrets.
   **Progress (18 Oct 2026):** the Android and Web clients exist. Locally, the web client ID is in `.env.local`, the Google provider is enabled in `supabase/config.toml` (web and Android client IDs; the secret is in the git-ignored `supabase/.env`), and the local auth server reaches its token check (a fake token returns "Bad ID token"). Not done: the iOS client, the same settings in the hosted Supabase project (M11) and in EAS environment variables for preview and production builds, and the new development build with a real sign-in test.
   6. Make a new development build, then test: sign in with Google, the profile name comes from the Google account, the terms screen appears once, and signing out then in again offers the account chooser.
 
@@ -956,7 +956,7 @@ Check `eas.json`: `production` builds an Android **app bundle** and an iOS store
 > eas env:create --environment production --name EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID --value <id> --visibility plaintext
 > ```
 >
-> `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` and `GOOGLE_IOS_URL_SCHEME` wait for the iOS build.
+> Google sign-in is Android only (see decisions.md), so there is no `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` or `GOOGLE_IOS_URL_SCHEME`.
 
 ### 12.4 Signing keys and key restrictions
 
