@@ -346,7 +346,7 @@ isOneToOne: false
           Views: {
             "cafe_drink_scores": {
                   Row: {
-                    "cafe_id": string | null,"drink_id": number | null,"median_price": number | null,"price_reports": number | null,"rating_count": number | null,"score": number | null
+                    "cafe_id": string | null,"drink_id": number | null,"median_price": number | null,"price_reports": number | null,"rank_score": number | null,"rating_count": number | null,"score": number | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -366,7 +366,7 @@ isOneToOne: false
                   ]
                 },"cafe_scores": {
                   Row: {
-                    "cafe_id": string | null,"metric": Database["public"]['Enums']["metric"] | null,"rating_count": number | null,"score": number | null
+                    "cafe_id": string | null,"metric": Database["public"]['Enums']["metric"] | null,"rank_score": number | null,"rating_count": number | null,"score": number | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -419,7 +419,22 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "apply_ban":
+            "admin_overview":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "hidden_reviews": number,"new_users_7d": number,"reviews_7d": number,"total_reviews": number,"total_users": number
+            }[]
+                           },
+"admin_reviews":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "cafe_name": string,"coffee": number,"comment": string,"created_at": string,"display_name": string,"hidden_at": string,"review_id": string,"suburb": string,"user_id": string,"verified": boolean,"visit_date": string
+            }[]
+                           },
+"admin_users":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "display_name": string,"last_review_at": string,"review_count": number,"signed_up_at": string,"user_id": string
+            }[]
+                           },
+"apply_ban":
 { Args: { "p_moderator_id": string,"p_note"?: string,"p_user_id": string }; Returns: number
                            },
 "area_searched_since":
@@ -435,7 +450,7 @@ isOneToOne: false
                            },
 "cafes_in_view":
 { Args: { "max_lat": number,"max_lng": number,"min_lat": number,"min_lng": number,"p_metric": Database["public"]['Enums']["metric"] }; Returns: {
-              "best_drink": string,"best_drink_score": number,"coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"has_ratings": boolean,"id": string,"lat": number,"lng": number,"name": string,"rating_count": number,"score": number,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
+              "best_drink": string,"best_drink_score": number,"coffee_count": number,"coffee_score": number,"food_count": number,"food_score": number,"google_place_id": string,"has_ratings": boolean,"id": string,"lat": number,"lng": number,"name": string,"rank_score": number,"rating_count": number,"score": number,"suburb": string,"vibe_count": number,"vibe_score": number,"work_count": number,"work_score": number
             }[]
                            },
 "count_cafes_in_box":

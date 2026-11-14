@@ -10,6 +10,15 @@ describe("sortForCards", () => {
     expect(sortForCards([a, b, c]).map((x) => x.name)).toEqual(["B", "C", "A"]);
   });
 
+  it("orders by rank score, not by the shown score", () => {
+    const oneFiveStar = cafe({ name: "One 5-star", score: 5.0, rank_score: 4.0 });
+    const fortyReviews = cafe({ name: "Forty reviews", score: 4.6, rank_score: 4.5 });
+    expect(sortForCards([oneFiveStar, fortyReviews]).map((x) => x.name)).toEqual([
+      "Forty reviews",
+      "One 5-star",
+    ]);
+  });
+
   it("puts cafes without a score after the scored ones", () => {
     const rated = cafe({ name: "Rated", score: 3.0 });
     const isNew = cafe({ name: "New", score: null, has_ratings: true });

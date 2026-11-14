@@ -3,15 +3,16 @@ import { distanceMetres } from "./geo";
 import type { MapCafe, Point } from "./types";
 
 /**
- * The order of the cards at the bottom of the map: best score for the selected metric first, then
- * nearest to the person, then by name. Cafes without a score come last.
+ * The order of the cards at the bottom of the map: best rank score for the selected metric first,
+ * then nearest to the person, then by name. Cafes without a score come last. Ranking uses the
+ * weighted score, so one 5-star review does not outrank forty 4.5-star reviews.
  */
 export function sortForCards(cafes: readonly MapCafe[], from?: Point | null): MapCafe[] {
   return [...cafes].sort((a, b) => {
-    if (a.score !== b.score) {
-      if (a.score === null) return 1;
-      if (b.score === null) return -1;
-      return b.score - a.score;
+    if (a.rank_score !== b.rank_score) {
+      if (a.rank_score === null) return 1;
+      if (b.rank_score === null) return -1;
+      return b.rank_score - a.rank_score;
     }
     if (a.has_ratings !== b.has_ratings) return a.has_ratings ? -1 : 1;
     if (from) {

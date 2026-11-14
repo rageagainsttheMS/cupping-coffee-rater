@@ -14,7 +14,9 @@ One short entry per decision. Source: BUILD_PLAN.md, M0. Status is **Decided** u
 
 ### Displayed vs ranked score
 
-**Decided: one score for both.** The Bayesian, recency-weighted score is displayed and used to rank, so pins and order never disagree. Counts shown are raw counts. Scores are null with no ratings (shown as "New"). Lowered from 3 to 1 on 31 Oct 2026.
+**Decided: plain average shown, weighted score ranks** (changed 14 Nov 2026). The screen shows the plain average of a cafe's ratings (`score`), because the weighted score read lower than what people entered (two 4-star reviews showed 3.8). The Bayesian, recency-weighted score (`rank_score`) is used only to order map cards, pick each cluster's best cafe, and order drinks, so one 5-star review still does not outrank forty 4.5-star reviews. The order and the numbers can disagree; the raw count shown next to each score explains why. Scores are null with no ratings (shown as "New"). Minimum ratings lowered from 3 to 1 on 31 Oct 2026.
+
+_Previously: one score for both, the weighted score displayed and ranked, so pins and order never disagreed._
 
 ### Verified-visit radius
 

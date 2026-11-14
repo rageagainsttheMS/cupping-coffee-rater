@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 delete from auth.users;
 delete from public.cafes;
 
-select plan(12);
+select plan(16);
 
 -- Fixtures: 45 users so every review in a cafe has a distinct author.
 insert into auth.users (id, email)
@@ -43,6 +43,8 @@ end $$;
 
 create function pg_temp.score(p_cafe int, p_metric public.metric) returns numeric language sql as
   $$ select score from public.cafe_scores where cafe_id = pg_temp.cid(p_cafe) and metric = p_metric $$;
+create function pg_temp.rank(p_cafe int, p_metric public.metric) returns numeric language sql as
+  $$ select rank_score from public.cafe_scores where cafe_id = pg_temp.cid(p_cafe) and metric = p_metric $$;
 create function pg_temp.cnt(p_cafe int, p_metric public.metric) returns bigint language sql as
   $$ select rating_count from public.cafe_scores where cafe_id = pg_temp.cid(p_cafe) and metric = p_metric $$;
 
@@ -50,20 +52,28 @@ create function pg_temp.cnt(p_cafe int, p_metric public.metric) returns bigint l
 select pg_temp.add_review(1, 1, 0, 'flat_white', 4);
 select isnt(pg_temp.score(1, 'coffee'), null, 'one Coffee rating: score appears');
 select is(pg_temp.cnt(1, 'coffee'), 1::bigint, 'one Coffee rating: raw count is 1');
+select is(pg_temp.score(1, 'coffee'), 4::numeric, 'one Coffee rating: the shown score is that rating');
 
--- Rule 2: a single 5-star review is pulled toward the city average rather than showing 5.0,
--- and forty 4.5-star reviews score close to 4.5.
+-- Rule 2: the shown score is the plain average, but the rank score of a single 5-star review is
+-- pulled toward the city average, so it ranks below forty 4.5-star reviews.
+-- Cafe 9's ten 3-star reviews keep the city average realistic (about 4.2). If nearly every rating
+-- were 4.5, the city average would be 4.5 too, and a lone 5 would rank just above the forty 4.5s.
+select pg_temp.add_review(g, 9, 0, 'flat_white', 3) from generate_series(1, 10) g;
 select pg_temp.add_review(2, 1, 0, 'flat_white', 4);
 select pg_temp.add_review(3, 1, 0, 'flat_white', 4);
 select pg_temp.add_review(g, 2, 0, 'flat_white', 4.5) from generate_series(1, 40) g;
 select pg_temp.add_review(1, 3, 0, 'flat_white', 5);
-select ok(pg_temp.score(3, 'coffee') < 5, 'one 5-star review is shrunk below 5.0');
-select ok(pg_temp.score(2, 'coffee') between 4.4 and 4.6, 'forty 4.5s score close to 4.5');
+select is(pg_temp.score(1, 'coffee'), 4::numeric, 'three 4-star reviews show 4.0');
+select is(pg_temp.score(3, 'coffee'), 5::numeric, 'one 5-star review shows 5.0');
+select ok(pg_temp.rank(3, 'coffee') < 5, 'one 5-star review ranks as if below 5.0');
+select ok(pg_temp.rank(2, 'coffee') between 4.4 and 4.6, 'forty 4.5s rank close to 4.5');
+select ok(pg_temp.rank(2, 'coffee') > pg_temp.rank(3, 'coffee'),
+  'forty 4.5-star reviews outrank one 5-star review');
 select pg_temp.add_review(2, 3, 0, 'flat_white', 5);
 select pg_temp.add_review(3, 3, 0, 'flat_white', 5);
-select ok(pg_temp.score(3, 'coffee') < 5, 'three 5-star reviews are shrunk below 5.0');
+select ok(pg_temp.rank(3, 'coffee') < 5, 'three 5-star reviews rank as if below 5.0');
 
--- Rule 3: a review from 12 months ago counts less than one from this week.
+-- Rule 3: in the rank score, a review from 12 months ago counts less than one from this week.
 -- Cafe 4 has the 5 recent and two old 3s; cafe 5 has the 5 old and two recent 3s.
 select pg_temp.add_review(1, 4, 7, 'flat_white', 5);
 select pg_temp.add_review(2, 4, 365, 'flat_white', 3);
@@ -71,7 +81,7 @@ select pg_temp.add_review(3, 4, 365, 'flat_white', 3);
 select pg_temp.add_review(1, 5, 365, 'flat_white', 5);
 select pg_temp.add_review(2, 5, 7, 'flat_white', 3);
 select pg_temp.add_review(3, 5, 7, 'flat_white', 3);
-select ok(pg_temp.score(4, 'coffee') > pg_temp.score(5, 'coffee'),
+select ok(pg_temp.rank(4, 'coffee') > pg_temp.rank(5, 'coffee'),
   'recent 5-star outweighs the same 5-star from 12 months ago');
 
 -- Rule 4: "Didn't try" for Food leaves the Food average and count unchanged.

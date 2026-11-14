@@ -39,11 +39,12 @@ of its store release.
 
 ## How scores work
 
-A cafe's score is not a plain average. Each metric uses a **Bayesian average**: a cafe's ratings are
-blended with the city average using a prior weight of 5 ratings. One 5-star review can't put a new cafe
-at the top. Ratings also **decay with a 12-month half-life**, so a cafe that has improved (or slipped)
-shows it. The same score is shown on screen and used for ranking, so pin order and the numbers always
-agree. All of this runs in Postgres (`scoring_constants()`, in
+The score on screen is the **plain average** of a cafe's ratings, so two 4-star reviews show 4.0.
+Ranking uses a separate **Bayesian average**: a cafe's ratings are blended with the city average using
+a prior weight of 5 ratings, so one 5-star review can't put a new cafe at the top. The ranking also
+**decays ratings with a 12-month half-life**, so a cafe that has improved (or slipped) moves up or
+down. The review count shown next to each score explains why a cafe with fewer reviews can sit lower in
+the list. All of this runs in Postgres (`scoring_constants()`, in
 [supabase/migrations](supabase/migrations)). The reasons for each choice are in
 [decisions.md](markdown/decisions.md).
 

@@ -1,6 +1,6 @@
 /**
- * One cafe in the map view, as returned by the `cafes_in_view` function. `score` and `rating_count`
- * are for the metric that is selected. The generated database types call the nullable fields plain
+ * One cafe in the map view, as returned by the `cafes_in_view` function. `score`, `rank_score`
+ * and `rating_count` are for the metric that is selected. The generated database types call the nullable fields plain
  * numbers, so the real shape is written out here.
  */
 export type MapCafe = {
@@ -10,8 +10,13 @@ export type MapCafe = {
   suburb: string | null;
   lat: number;
   lng: number;
-  /** The selected metric's score. Null until it has 3 ratings. */
+  /** The selected metric's plain average, which is what people see. Null with no ratings. */
   score: number | null;
+  /**
+   * The selected metric's weighted score (pulled toward the city average, recent visits count
+   * more). Used only to order cafes, never shown. Null whenever `score` is.
+   */
+  rank_score: number | null;
   rating_count: number;
   coffee_score: number | null;
   coffee_count: number;

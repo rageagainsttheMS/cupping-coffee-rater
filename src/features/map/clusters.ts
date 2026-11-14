@@ -25,8 +25,9 @@ export const CLUSTER_RADIUS_PX = 40;
 /** From the zoom after this, every cafe is its own pin. About street level in a busy suburb. */
 export const CLUSTER_MAX_ZOOM = 14;
 
-type PointProps = { cafeId: string; score: number | null };
-type ClusterProps = { count: number; best: number | null };
+type PointProps = { cafeId: string; score: number | null; rank: number | null };
+/** `best` is the shown score of the cafe with the highest `bestRank`. */
+type ClusterProps = { count: number; best: number | null; bestRank: number | null };
 
 export type ClusterIndex = {
   supercluster: Supercluster<PointProps, ClusterProps>;
@@ -37,24 +38,30 @@ export type MapItem =
   | { kind: "cluster"; id: number; lat: number; lng: number; count: number; best: number | null }
   | { kind: "cafe"; cafe: MapCafe };
 
-const better = (a: number | null, b: number | null): number | null =>
-  a === null ? b : b === null ? a : Math.max(a, b);
-
-/** Groups nearby cafes. Each cluster carries how many cafes it holds and the best score among them. */
+/**
+ * Groups nearby cafes. Each cluster carries how many cafes it holds and the score of its best
+ * cafe, where best means the highest rank score.
+ */
 export function buildClusterIndex(cafes: readonly MapCafe[]): ClusterIndex {
   const supercluster = new Supercluster<PointProps, ClusterProps>({
     radius: CLUSTER_RADIUS_PX,
     maxZoom: CLUSTER_MAX_ZOOM,
-    map: (props) => ({ count: 1, best: props.score }),
+    map: (props) => ({ count: 1, best: props.score, bestRank: props.rank }),
     reduce: (accumulated, props) => {
       accumulated.count += props.count;
-      accumulated.best = better(accumulated.best, props.best);
+      if (
+        props.bestRank !== null &&
+        (accumulated.bestRank === null || props.bestRank > accumulated.bestRank)
+      ) {
+        accumulated.best = props.best;
+        accumulated.bestRank = props.bestRank;
+      }
     },
   });
   supercluster.load(
     cafes.map((cafe) => ({
       type: "Feature" as const,
-      properties: { cafeId: cafe.id, score: cafe.score },
+      properties: { cafeId: cafe.id, score: cafe.score, rank: cafe.rank_score },
       geometry: { type: "Point" as const, coordinates: [cafe.lng, cafe.lat] },
     })),
   );

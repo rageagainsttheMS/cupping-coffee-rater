@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 delete from auth.users;
 delete from public.cafes;
 
-select plan(12);
+select plan(13);
 
 -- Fixtures: cafe 1 inside the box with three flat white ratings, cafe 2 inside with none, cafe 3 outside.
 insert into auth.users (id, email)
@@ -40,9 +40,12 @@ select is(
 select is(
   (select count(*)::int from public.cafes_in_view(144.0, -38.5, 146.0, -37.0, 'coffee')),
   3, 'a wider box returns all three cafes');
-select isnt(
+select is(
   (select score from public.cafes_in_view(144.97, -37.81, 144.99, -37.79, 'coffee') where name = 'Inside Rated'),
-  null, 'a rated cafe has a Coffee score');
+  4.5::numeric, 'a rated cafe shows the plain average of its Coffee ratings');
+select isnt(
+  (select rank_score from public.cafes_in_view(144.97, -37.81, 144.99, -37.79, 'coffee') where name = 'Inside Rated'),
+  null, 'a rated cafe has a Coffee rank score for ordering');
 select is(
   (select rating_count from public.cafes_in_view(144.97, -37.81, 144.99, -37.79, 'coffee') where name = 'Inside Rated'),
   3::bigint, 'the chosen metric count is returned');

@@ -57,6 +57,15 @@ describe("clustering", () => {
     expect(item).toMatchObject({ kind: "cluster", count: 3, best: 3.8 });
   });
 
+  it("shows the score of the cafe with the best rank score, not the highest shown score", () => {
+    const index = buildClusterIndex([
+      near({ score: 5.0, rank_score: 4.0 }),
+      near({ score: 4.6, rank_score: 4.5 }),
+    ]);
+    const [item] = getMapItems(index, WORLD_BBOX, 3);
+    expect(item).toMatchObject({ kind: "cluster", count: 2, best: 4.6 });
+  });
+
   it("has no best score when nothing in the cluster is rated", () => {
     const index = buildClusterIndex([
       near({ score: null, has_ratings: false }),

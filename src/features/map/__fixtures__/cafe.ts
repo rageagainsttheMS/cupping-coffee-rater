@@ -2,9 +2,13 @@ import type { MapCafe } from "../types";
 
 let next = 0;
 
-/** A cafe in view with sensible defaults: rated 4.0 for the selected metric. */
+/**
+ * A cafe in view with sensible defaults: rated 4.0 for the selected metric. `rank_score` follows
+ * `score` unless it is given.
+ */
 export function cafe(over: Partial<MapCafe> = {}): MapCafe {
   next += 1;
+  const score = "score" in over ? (over.score as number | null) : 4.0;
   return {
     id: `cafe-${next}`,
     google_place_id: `place-${next}`,
@@ -12,7 +16,8 @@ export function cafe(over: Partial<MapCafe> = {}): MapCafe {
     suburb: "Fitzroy",
     lat: -37.8,
     lng: 144.98,
-    score: 4.0,
+    score,
+    rank_score: score,
     rating_count: 10,
     coffee_score: 4.0,
     coffee_count: 10,
