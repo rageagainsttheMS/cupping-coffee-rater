@@ -41,6 +41,17 @@ Both take effect at once: every moderation call reads the role from `auth.users`
 person's token. A moderator who is banned stops being a moderator. Moderators cannot ban themselves
 or another moderator.
 
+## Admin page
+
+`docs-site/admin.html` shows total users and reviews, every review (hidden ones greyed out) and every
+user with their sign-up date and review count. Moderators sign in with email and password; anyone
+else sees an error and no data, because `admin_overview`, `admin_reviews` and `admin_users` check
+the moderator role on the server. Before publishing, set `SUPABASE_ANON_KEY` in the page to the hosted
+project's publishable key (Supabase dashboard, Project Settings, API Keys). Not the one in
+`.env.development.local`: that is the local Docker key, and the hosted project answers "Invalid API
+key". Then copy it into `site/` in `cupping-legal` like the other pages. It
+is not linked from the index page.
+
 ## Daily check
 
 1. Profile, then Report queue. The **Open** list shows one card per reported review, oldest report

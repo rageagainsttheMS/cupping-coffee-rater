@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Cupping admin</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      main.wide {
+        max-width: 72rem;
+      }
+      header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        padding: 0.4rem 0.9rem;
+        border: 1px solid var(--primary);
+        border-radius: 0.5rem;
+        background: var(--primary);
+        color: var(--bg);
+        cursor: pointer;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--primary);
+      }
+      input {
+        width: 100%;
+        padding: 0.45rem 0.6rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background: transparent;
+      }
+      form label {
+        display: block;
+        margin-bottom: 0.75rem;
+      }
+      .error {
+        color: #b3261e;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.75rem;
+      }
+      .tile {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+      }
+      .tile .label {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .tile .value {
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+      .tile .sub {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+      }
+      .section-head input {
+        max-width: 20rem;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+      th,
+      td {
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td.num {
+        text-align: right;
+        white-space: nowrap;
+      }
+      td.date {
+        white-space: nowrap;
+      }
+      tr.hidden td {
+        color: var(--muted);
+      }
+      .tag {
+        display: inline-block;
+        margin-left: 0.35rem;
+        padding: 0 0.4rem;
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  </head>
+  <body>
+    <main class="wide">
+      <header>
+        <h1>Cupping admin</h1>
+        <button id="sign-out" class="secondary" hidden>Sign out</button>
+      </header>
+
+      <p id="status" class="updated">Loading…</p>
+
+      <form id="sign-in" hidden>
+        <p>Sign in with a moderator account (email and password).</p>
+        <label>Email <input id="email" type="email" autocomplete="username" required /></label>
+        <label>
+          Password <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">Sign in</button>
+      </form>
+
+      <div id="dashboard" hidden>
+        <div class="tiles" id="tiles"></div>
+
+        <div class="section-head">
+          <h2>Reviews <span id="review-count" class="updated"></span></h2>
+          <input id="search" type="search" placeholder="Search cafe, user or comment" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Cafe</th>
+                <th>User</th>
+                <th>Coffee</th>
+                <th>Comment</th>
+              </tr>
+            </thead>
+            <tbody id="reviews"></tbody>
+          </table>
+        </div>
+
+        <h2>Users</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Signed up</th>
+                <th>Reviews</th>
+                <th>Last review</th>
+              </tr>
+            </thead>
+            <tbody id="users"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // The project URL and anon (public) key, the same values the app ships with. The anon key is
+      // safe to publish: every admin function checks the moderator role on the server.
+      const SUPABASE_URL = "https://pigzqwghwsrxxocdbftm.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_rJSovTCzOl2YFffKGhElvw_vNbbp486";
+
+      const $ = (id) => document.getElementById(id);
+      const status = $("status");
+      let allReviews = [];
+
+      function show(state, message = "") {
+        $("sign-in").hidden = state !== "signed-out";
+        $("dashboard").hidden = state !== "ready";
+        $("sign-out").hidden = state === "signed-out" || state === "config";
+        status.textContent = message;
+        status.className = state === "error" || state === "config" ? "error" : "updated";
+      }
+
+      function formatDate(value) {
+        if (!value) return "–";
+        return new Date(value).toLocaleDateString("en-AU", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      function cell(text, className) {
+        const td = document.createElement("td");
+        td.textContent = text;
+        if (className) td.className = className;
+        return td;
+      }
+
+      function tag(text) {
+        const span = document.createElement("span");
+        span.className = "tag";
+        span.textContent = text;
+        return span;
+      }
+
+      function renderTiles(o) {
+        const tiles = [
+          ["Users", o.total_users, `${o.new_users_7d} new in the last 7 days`],
+          ["Reviews", o.total_reviews, `${o.reviews_7d} in the last 7 days`],
+          ["New users", o.new_users_7d, "last 7 days"],
+          ["Hidden reviews", o.hidden_reviews, "by moderators"],
+        ];
+        $("tiles").replaceChildren(
+          ...tiles.map(([label, value, sub]) => {
+            const div = document.createElement("div");
+            div.className = "tile";
+            for (const [cls, text] of [
+              ["label", label],
+              ["value", value],
+              ["sub", sub],
+            ]) {
+              const el = document.createElement("div");
+              el.className = cls;
+              el.textContent = text;
+              div.append(el);
+            }
+            return div;
+          }),
+        );
+      }
+
+      function renderReviews() {
+        const q = $("search").value.trim().toLowerCase();
+        const rows = q
+          ? allReviews.filter((r) =>
+              [r.cafe_name, r.suburb, r.display_name, r.comment].some((v) =>
+                (v ?? "").toLowerCase().includes(q),
+              ),
+            )
+          : allReviews;
+        $("review-count").textContent = q
+          ? `(${rows.length} of ${allReviews.length})`
+          : `(${allReviews.length})`;
+        $("reviews").replaceChildren(
+          ...rows.map((r) => {
+            const tr = document.createElement("tr");
+            if (r.hidden_at) tr.className = "hidden";
+            const cafe = cell(r.suburb ? `${r.cafe_name}, ${r.suburb}` : r.cafe_name);
+            if (r.verified) cafe.append(tag("Verified"));
+            const comment = cell(r.comment);
+            if (r.hidden_at) comment.append(tag("Hidden"));
+            tr.append(
+              cell(formatDate(r.created_at), "date"),
+              cafe,
+              cell(r.display_name),
+              cell(r.coffee == null ? "–" : Number(r.coffee).toFixed(1), "num"),
+              comment,
+            );
+            return tr;
+          }),
+        );
+      }
+
+      function renderUsers(users) {
+        $("users").replaceChildren(
+          ...users.map((u) => {
+            const tr = document.createElement("tr");
+            tr.append(
+              cell(u.display_name),
+              cell(formatDate(u.signed_up_at), "date"),
+              cell(String(u.review_count), "num"),
+              cell(formatDate(u.last_review_at), "date"),
+            );
+            return tr;
+          }),
+        );
+      }
+
+      async function load(client) {
+        show("loading", "Loading…");
+        const [overview, reviews, users] = await Promise.all([
+          client.rpc("admin_overview"),
+          client.rpc("admin_reviews"),
+          client.rpc("admin_users"),
+        ]);
+        const failed = [overview, reviews, users].find((r) => r.error);
+        if (failed) {
+          const forbidden = failed.error.code === "42501";
+          show(
+            "error",
+            forbidden
+              ? "This account is not a moderator, so it can't see the admin page."
+              : `Couldn't load the data: ${failed.error.message}`,
+          );
+          return;
+        }
+        renderTiles(overview.data[0]);
+        allReviews = reviews.data;
+        renderReviews();
+        renderUsers(users.data);
+        show("ready", `Updated ${new Date().toLocaleString("en-AU")}`);
+      }
+
+      function start() {
+        if (!SUPABASE_ANON_KEY) {
+          show("config", "Set SUPABASE_ANON_KEY at the bottom of admin.html first.");
+          return;
+        }
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        $("sign-in").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          status.textContent = "Signing in…";
+          const { error } = await client.auth.signInWithPassword({
+            email: $("email").value.trim(),
+            password: $("password").value,
+          });
+          if (error) {
+            status.textContent = error.message;
+            status.className = "error";
+          }
+        });
+        $("sign-out").addEventListener("click", () => client.auth.signOut());
+        $("search").addEventListener("input", renderReviews);
+
+        client.auth.onAuthStateChange((event, session) => {
+          // Run outside the callback: supabase-js warns against awaiting its calls inside it.
+          setTimeout(() => {
+            if (session) {
+              if (event === "SIGNED_IN" || event === "INITIAL_SESSION") load(client);
+            } else {
+              show("signed-out", "");
+            }
+          });
+        });
+      }
+
+      start();
+    </script>
+  </body>
+</html>
