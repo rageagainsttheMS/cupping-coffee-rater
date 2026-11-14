@@ -1,15 +1,16 @@
 # Coffee Rater — Phase 1 Build Plan
 
-This plan takes the project from the end of [GETTING_STARTED.md](GETTING_STARTED.md) to a
-feature-complete Phase 1 app that is ready for its first production build with EAS Build.
+This plan takes the project from its initial setup to a feature-complete Phase 1 app that is ready
+for its first production build with EAS Build.
 
-**Inputs:** _Cupping App — Product Design Ideas_ (product doc), _Cupping App — Technical Solution
-Design_ (SDD) and GETTING_STARTED.md.
+**Inputs:** _Cupping App — Product Design Ideas_ (product doc) and _Cupping App — Technical Solution
+Design_ (SDD).
 
-**Starting point.** Everything in GETTING_STARTED.md is done:
+**Starting point.** The initial setup was done before this plan (it was in GETTING_STARTED.md, since
+removed):
 
 - Expo app scaffolded (strict TypeScript, Expo Router, SDD folder layout, `app.config.ts`).
-- Dependencies from §4.3 installed and npm scripts in place.
+- Dependencies installed and npm scripts in place.
 - Repo on GitHub with branch protection, Dependabot, secret scanning, and CI (`app` + `database` jobs) as required checks.
 - Local Supabase running with the PostGIS migration applied; hosted Supabase project (Sydney) linked.
 - Three restricted Google keys, the Places key stored only in Supabase secrets, budget alert and quotas set.
@@ -63,7 +64,7 @@ the answers in a `docs/decisions.md` file (one short entry per decision).
 | Google rating fallback: field and cache duration | M3                 | `rating` and `userRatingCount` from Place Details, fetched live and **not stored** (terms only allow caching lat/lng for 30 days and place IDs). Shown on the cafe page only. See decisions.md                                                             |
 | Can cafe coordinates be stored?                  | M2 `cafes` table   | SDD plan: place ID permanently, coordinates with `refreshed_at` and a refresh job (M11). Confirm against current terms                                                                                             |
 | Minimum-star filter on the map                   | M5                 | Leave out of Phase 1 (it isn't in the chosen Phase 1 screens). Low-scoring pins fade instead. Revisit after beta                                                                                                   |
-| Single or combined metric tabs                   | M5                 | Single-select in Phase 1, matching the chosen map screen. Combining tabs ("show the lower score") is Phase 2                                                                                                       |
+| Single or combined metric tabs                   | M5                 | Single-select, matching the chosen map screen. Combining tabs ("show the lower score") was dropped on 14 Nov 2026                                                                                              |
 | Comment required?                                | M7                 | The product doc says required (10–280 chars) and the mockup shows "At least 10 characters", but its caption says "Short and optional". Recommend **required, 10–280**, matching the trust intent                   |
 | Price and milk per drink or per review           | M2 schema          | **Per drink** (on `review_drinks`). The SDD puts price on `reviews`, but the cafe page and onboarding show a median price _per drink_, which a single review-level price can't support when a visit has two drinks |
 | Fonts                                            | M1                 | A serif for headings and cafe names (e.g. Fraunces) and a sans for body (e.g. Manrope or Inter), both via `@expo-google-fonts`                                                                                     |
@@ -361,7 +362,7 @@ From the mockups: **Welcome** (pitch, four score pins on a map illustration, "Ge
   1. **Google Cloud** (project `coffee-rater`) → Google Auth Platform. *Branding*: app name and a support email. *Audience*: External. While the app is in Testing, **only listed test users can sign in**, so add your own Google account(s) (and beta testers) as test users, or publish the app when ready (the basic `openid`, email and profile scopes need no verification).
   2. **Clients** (create three):
      - **Web application.** Add the Supabase callback URL as an authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`. Note the client ID and secret.
-     - **Android.** Package name `com.williamw.cupping`, and the **SHA-1 of the EAS keystore** (expo.dev → project → Credentials → Android → the build credentials page, or `eas credentials`). Also add the local debug keystore SHA-1 if you build with `expo run:android` (the `keytool` command in GETTING_STARTED §5), and later the Play App Signing SHA-1 (M12.4). A wrong SHA-1 shows as "developer error" on the phone.
+     - **Android.** Package name `com.williamw.cupping`, and the **SHA-1 of the EAS keystore** (expo.dev → project → Credentials → Android → the build credentials page, or `eas credentials`). Also add the local debug keystore SHA-1 if you build with `expo run:android` (`keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`), and later the Play App Signing SHA-1 (M12.4). A wrong SHA-1 shows as "developer error" on the phone.
      - **iOS.** Bundle ID `com.williamw.cupping`. Note the client ID and its reversed form, the iOS URL scheme (`com.googleusercontent.apps.…`).
   3. **Supabase dashboard** (hosted, M11) → Authentication → Providers → Google: enable; **Client IDs** = the web client ID first, then the Android and iOS client IDs, comma-separated; secret = the web client secret. Leave "Skip nonce check" off unless sign-in fails with a nonce error (iOS is the likely case).
   4. **Local testing** against local Supabase (the app currently points at it): add `[auth.external.google]` to `supabase/config.toml` with `enabled = true`, `client_id` = the web client ID, `secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"` and `skip_nonce_check = true`, put the secret in `supabase/.env` (git-ignored), then restart with `supabase stop` and `supabase start`.
@@ -844,8 +845,6 @@ Google's terms allow caching coordinates for at most 30 days (see `markdown/deci
 
 ### 11.3 CI/CD additions
 
-From GETTING_STARTED §8 "Add later":
-
 - `.github/workflows/deploy-db.yml`: on push to `main` when `supabase/**` changes, run `supabase db push` and `supabase functions deploy` with `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and the project ref as Actions secrets.
 - `.github/workflows/release.yml`: on tag `v*`, `eas build --platform all --profile production --non-interactive` with `EXPO_TOKEN` (add `--auto-submit` once store listings exist).
 - Add the Edge Function tests to the `database` CI job.
@@ -899,7 +898,7 @@ Do these with a `preview` build pointed at the hosted project (11.1 done, with t
 In `app.config.ts`:
 
 - `name`, `slug`, `scheme: "coffeerater"`, `version: "0.1.0"`, `runtimeVersion: { policy: "appVersion" }`.
-- `android.package` / `ios.bundleIdentifier` (the identifier from GETTING_STARTED §0).
+- `android.package` / `ios.bundleIdentifier` (`com.williamw.cupping`).
 - Build numbers: set `"appVersionSource": "remote"` in `eas.json` `cli` and `"autoIncrement": true` on the production profile.
 - `ios.infoPlist`: `NSLocationWhenInUseUsageDescription`, `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, and `ITSAppUsesNonExemptEncryption: false`.
 - `android.permissions`: only what's needed (`ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`, `CAMERA`); block unneeded ones with `android.blockedPermissions`.
@@ -1082,7 +1081,7 @@ address. The sign-up and forgot-password screens already have text for the "Chec
 - **A sending service.** Supabase's built-in email is meant for testing, with very low rate limits, and on
   hosted projects it may only deliver to the project team's own addresses (check the current Supabase
   docs). The closed beta (30 to 50 seed reviewers) needs custom SMTP set in Supabase Auth, for example
-  Resend, Postmark or Amazon SES. Pick one and add its account to GETTING_STARTED §1.
+  Resend, Postmark or Amazon SES.
 - **A sender domain.** Reliable delivery needs a domain you own, with SPF, DKIM and DMARC records, so
   emails do not land in spam. The same domain could host the legal pages and the contact address (M9.5).
   This ties to the app name and domain choice (M12.2: "Coffee Rater" is a placeholder).
@@ -1120,7 +1119,7 @@ viewed, until it has 3 community ratings (M6.2, via `places-details`). Only the 
 - **Cost per use.** Estimate Place Details calls per session and per active user for each option, using
   Google's current price for the exact fields requested (`rating` and `userRatingCount` only, nothing
   else) and the free monthly allowance. Check today's Google Maps Platform pricing, as it changes, and
-  compare against the monthly budget and quotas set in GETTING_STARTED §5.
+  compare against the monthly budget and quotas set in Google Cloud.
 - **Ways to cut calls.** Fetch only for cafes with fewer than 3 community ratings; only for the selected
   card; only after the person stops panning; keep results in memory for a few minutes (allowed, but never
   saved to the database); and a per-user daily cap, enforced in the function.
@@ -1224,16 +1223,16 @@ more work than it saves.
 
 ## Phase 1 completion checklist
 
-- [ ] M0 decisions recorded
-- [ ] M1 theme, navigation shell, domain rules tested, all text in the copy file, tags and drinks from the database
-- [ ] M2 schema, RLS, scoring, `submit_review`, storage; TDD rules 1–9 green
-- [ ] M3 `places-search` and `places-details` deployed with caching and field masks
-- [ ] M4 onboarding, email/Google/Apple sign-in, location step
-- [ ] M5 map with metric tabs, clustered score pins, "Rate first" dots, swipeable card, search
+- [x] M0 decisions recorded
+- [x] M1 theme, navigation shell, domain rules tested, all text in the copy file, tags and drinks from the database
+- [x] M2 schema, RLS, scoring, `submit_review`, storage; TDD rules 1–9 green
+- [x] M3 `places-search` and `places-details` deployed with caching and field masks
+- [x] M4 onboarding, email/Google/Apple sign-in, location step
+- [x] M5 map with metric tabs, clustered score pins, "Rate first" dots, swipeable card, search
 - [x] M6 cafe page with scores, what to order, beans, price, reviews, Google fallback
 - [x] M7 six-step review wizard with drafts, photos, verified badge, posted screen
 - [x] M8 Saved tab and Profile
 - [x] M9 report, block, delete account, legal pages, moderation process
 - [x] M10 states, Sentry, accessibility, performance and coverage
-- [ ] M11 hosted backend, coordinate refresh job, deploy and release workflows, field tests
-- [ ] M12 app config, assets, credentials, first EAS production build
+- [ ] M11 hosted backend, coordinate refresh job, deploy and release workflows, field tests. All done except the deploy and release workflows (see `future_build.md`)
+- [x] M12 app config, assets, credentials, first EAS production build

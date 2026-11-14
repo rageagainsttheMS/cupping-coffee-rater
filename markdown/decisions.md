@@ -83,7 +83,7 @@ Open question: cafe `name` and `suburb` are also Places content, with no stated 
 
 ### Single or combined metric tabs
 
-**Decided: single-select.** Matches the chosen map screen. Combined tabs ("show the lower score") are Phase 2.
+**Decided: single-select.** Matches the chosen map screen. Combined tabs ("show the lower score") were planned for Phase 2, then dropped on 14 Nov 2026.
 
 ### Comment required?
 
@@ -129,7 +129,7 @@ Fixed by computing the weights in double precision and reading scores once. Afte
 
 ### Search cost control
 
-**Decided:** Google is skipped when 10 or more stored cafes are already in the area, or when the same 0.01° tile or text query was searched in the last 25 days. Text searches are not blocked by stored cafes. There is no per-user daily cap yet. The Google Cloud quotas from GETTING_STARTED §5 are the backstop. Revisit if the Places bill grows.
+**Decided:** Google is skipped when 10 or more stored cafes are already in the area, or when the same 0.01° tile or text query was searched in the last 25 days. Text searches are not blocked by stored cafes. There is no per-user daily cap yet. The quotas set in Google Cloud are the backstop. Revisit if the Places bill grows.
 
 ## Sign-in
 
